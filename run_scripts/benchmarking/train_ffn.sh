@@ -1,0 +1,2 @@
+python launcher_scripts/run_from_config.py configs/ffn_canopus_nist.yaml
+python launcher_scripts/run_from_config.py configs/ffn_canopus.yaml
