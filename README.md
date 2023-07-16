@@ -103,7 +103,8 @@ extracted from varous sources prepared by [Dührkop et al.](https://pubmed.ncbi.
 
 ```
 # download data and extract it under ./data/biomols
-wget  https://www.dropbox.com/s/9ary33x575i4q26/biomols.zip
+#https://www.dropbox.com/s/9ary33x575i4q26/biomols.zip
+wget  https://zenodo.org/record/8151490/files/biomols.zip
 
 unzip biomols.zip
 mv biomols data/
@@ -116,7 +117,8 @@ NPLIB1 is a public natural products dataset extracted from the GNPS database. NP
 
 ```
 # download data and extract it under ./data/canopus
-wget https://www.dropbox.com/s/lik2p04722gw3eo/canopus_train.zip
+#wget https://www.dropbox.com/s/lik2p04722gw3eo/canopus_train.zip
+wget https://zenodo.org/record/8151490/files/canopus_train.zip
 
 unzip canopus_train.zip
 mv canopus_train data/
@@ -129,7 +131,8 @@ rm canopus_train.zip
 
 ```
 # download data and extract it under ./data/canopus
-wget https://www.dropbox.com/s/mgrqb3hulf3d4gf/casmi22.zip
+#wget https://www.dropbox.com/s/mgrqb3hulf3d4gf/casmi22.zip
+wget https://zenodo.org/record/8151490/files/casmi22.zip
 
 unzip casmi22.zip
 mv casmi22 data/
