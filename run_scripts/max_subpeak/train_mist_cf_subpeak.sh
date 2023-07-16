@@ -1,0 +1,1 @@
+python launcher_scripts/run_from_config.py configs/mist_cf_canopus_nist_max_subpeak.yaml

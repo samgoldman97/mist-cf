@@ -1,0 +1,2 @@
+python launcher_scripts/run_from_config.py configs/ms1_canopus.yaml
+python launcher_scripts/run_from_config.py configs/ms1_canopus_nist.yaml

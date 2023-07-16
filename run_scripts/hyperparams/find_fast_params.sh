@@ -1,0 +1,12 @@
+CUDA_VISIBLE_DEVICES=1,2,3 python src/mist_cf/fast_form_score/fast_form_hyperopt.py \
+    --dataset-file data/biomols/biomols_with_decoys.txt \
+    --split-file data/biomols/biomols_with_decoys_split.tsv \
+    --seed 1 \
+    --save-dir results/hyperopt_fast_filter/ \
+    --num-workers 8 \
+    --max-epochs 200 \
+    --max-decoy 32 \
+    --gpu \
+    --cpus-per-trial 8 \
+    --gpus-per-trial 0.5 \
+    --num-h-samples 50 \

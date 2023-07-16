@@ -1,0 +1,22 @@
+CUDA_VISIBLE_DEVICES=0 python3 src/mist_cf/mist_cf_score/train.py \
+--gpu \
+--save-dir 'split_1' \
+--dataset-name 'canopus_train' \
+--split-file 'data/canopus_train/splits/split_1.tsv' \
+--decoy-label 'data/canopus_train/decoy_labels/decoy_label_COMMON.tsv' \
+--subform-dir 'data/canopus_train/subformulae/formulae_spec_decoy_label_COMMON' \
+--seed 1 \
+--num-workers 8 \
+--batch-size 4 \
+--max-decoy 32 \
+--max-epochs 200 \
+--learning-rate 0.00045 \
+--lr-decay-frac 0.88 \
+--weight-decay 0 \
+--max-subpeak 20 \
+--layers 2 \
+--dropout 0.1 \
+--hidden-size 128 \
+--form-encoder 'abs-sines' \
+--no-cls-mass-diff \
+--save-dir results/public_mist_cf/split_1

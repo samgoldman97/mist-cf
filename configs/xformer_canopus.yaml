@@ -1,0 +1,54 @@
+launcher_args: {experiment_name: xformer,
+  script_name: "src/mist_cf/xformer_score/train.py",
+  slurm_script: launcher_scripts/generic_slurm.sh, 
+  launch_method: local,
+  visible_devices: [0],
+}
+universal_args:
+  _slurm_args:
+  - {_num_gpu: 1, cpus-per-task: 7, job-name: forward_train, mem-per-cpu: 8G, #nodelist: 'node[1236]',
+    time: '1-18:00:00'}
+
+  debug: [false] # TODOO: unflag
+  gpu: [true]
+  save-dir: [null]
+
+  dataset-name: [nist_canopus]
+  split-file: [data/nist_canopus/splits/split_1.tsv]
+  decoy-label: [data/nist_canopus/decoy_labels/decoy_label_COMMON.tsv]
+
+  seed: [1]
+  num-workers: [8] # unflag
+
+  # train-args
+  batch-size: [8]
+  max-decoy: [32]
+  max-epochs: [200]
+  learning-rate: [0.00025]
+  lr-decay-frac: [0.86]
+  weight-decay: [1e-7]
+
+  # Model args
+  layers: [2]
+  dropout: [0.2]
+  hidden-size: [32]
+  form-encoder: [abs-sines]
+
+  # Ablate args
+  no-ion-info: [false]
+  no-spec-info: [false]
+  no-instrument-info: [false]
+
+
+  # Not allowed to use cls mass diff
+  no-cls-mass-diff: [true] 
+
+iterative_args:
+  -  split-file: [data/nist_canopus/splits/split_1.tsv]
+     save-dir: [split_1]  #with_nist
+
+  -  split-file: [data/nist_canopus/splits/split_2.tsv]
+     save-dir: [split_2]
+
+  -  split-file: [data/nist_canopus/splits/split_3.tsv]
+     save-dir: [split_3]
