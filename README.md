@@ -1,5 +1,8 @@
 #  MIST-CF: Metabolite Inference with Spectrum Transformers (Chemical Formula)
 
+[![DOI](https://zenodo.org/badge/666904485.svg)](https://zenodo.org/badge/latestdoi/666904485)
+
+
 
 This repository provides implementations and code examples for MIST-CF, an
 extension of [MIST](https://www.biorxiv.org/content/10.1101/2022.12.30.522318v1) for annotating MS1 precursor masses from MS/MS data in a _de
