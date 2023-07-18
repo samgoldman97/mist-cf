@@ -12,6 +12,8 @@ without referencing any spectrum databases. Instead of computing fragmentation
 trees, MIST-CF adopts a formula transformer neural network architecture and
 learns in a data dependent fashion.
 
+Paper: [https://arxiv.org/abs/2307.08240](https://arxiv.org/abs/2307.08240)  
+
 ![Model  graphic](mist_cf_graphic.png)
 
 We note several advances to the MIST-CF chemical formula transformer architecture over the original MIST chemical formula transformer that we plan to add back into the MIST model architecture used for fingerprint prediction in future work: 
@@ -249,7 +251,14 @@ Additional analyses used for figure generation were conducted in `notebooks/`.
 If you use this repository, please consider citing both our work and the original SIRIUS papers, as we still rely on their deterministic tool for formula enumerations: 
 
 ```
-TODO
+ @misc{goldman2023mistcf,
+      title={MIST-CF: Chemical formula inference from tandem mass spectra}, 
+      author={Samuel Goldman and Jiayi Xin and Joules Provenzano and Connor W. Coley},
+      year={2023},
+      eprint={2307.08240},
+      archivePrefix={arXiv},
+      primaryClass={q-bio.QM}
+}
 ```
 
 1. Böcker, Sebastian, et al. "SIRIUS: decomposing isotope patterns for metabolite identification." Bioinformatics 25.2 (2009): 218-224.
