@@ -1,0 +1,72 @@
+launcher_args: {experiment_name: mist_cf_nist_max_subpeak,
+  script_name: "src/mist_cf/mist_cf_score/train.py",
+  slurm_script: launcher_scripts/generic_slurm.sh, 
+  launch_method: local_parallel,
+  visible_devices: [0,1,2,3,0,1,2,3]
+}
+universal_args:
+  _slurm_args:
+  - {_num_gpu: 1, 
+     cpus-per-task: 7, 
+     job-name: forward_train, 
+     mem-per-cpu: 8G, #nodelist: 'node[1236]',
+    time: '1-18:00:00'}
+
+  debug: [false] # Switch
+  gpu: [true]
+  save-dir: [null]
+
+  dataset-name: [nist_canopus]
+  split-file: [data/nist_canopus/splits/split_1_with_nist.tsv]
+  decoy-label: [data/nist_canopus/decoy_labels/decoy_label_COMMON.tsv]
+  subform-dir: [data/nist_canopus/subformulae/formulae_spec_decoy_label_COMMON_50]
+
+  seed: [1]
+  num-workers: [8]
+
+  # train-args
+  batch-size: [4]
+  max-decoy: [32]
+  max-epochs: [200]
+  learning-rate: [0.00045]
+  lr-decay-frac: [0.88]
+  weight-decay: [0]
+  max-subpeak: [20]
+
+  # Model args
+  layers: [2]
+  dropout: [0.1]
+  hidden-size: [128]
+  form-encoder: [abs-sines] #abs-sines]
+
+  # Ablate args
+  no-ion-info: [false]
+  no-spec-info: [false]
+  no-instrument-info: [false]
+  no-cls-mass-diff: [true]
+
+iterative_args:
+  -  max-subpeak: [1]
+     save-dir: [max_subpeak_1_1]
+     seed: [1]
+  -  max-subpeak: [3]
+     save-dir: [max_subpeak_3_1]
+     seed: [1]
+  -  max-subpeak: [5]
+     save-dir: [max_subpeak_5_1]
+     seed: [1]
+  -  max-subpeak: [10]
+     save-dir: [max_subpeak_10_1]
+     seed: [1]
+  -  max-subpeak: [15]
+     save-dir: [max_subpeak_15_1]
+     seed: [1]
+  -  max-subpeak: [20]
+     save-dir: [max_subpeak_20_1]
+     seed: [1]
+  -  max-subpeak: [30]
+     save-dir: [max_subpeak_30_1]
+     seed: [1]
+  -  max-subpeak: [50]
+     save-dir: [max_subpeak_50_1]
+     seed: [1]

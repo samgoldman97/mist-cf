@@ -1,0 +1,47 @@
+launcher_args: {experiment_name: public_mist_cf,
+  script_name: "src/mist_cf/mist_cf_score/train.py",
+  slurm_script: launcher_scripts/generic_slurm.sh, 
+  launch_method: local,
+  visible_devices: [2],
+}
+universal_args:
+  _slurm_args:
+  - {_num_gpu: 1, cpus-per-task: 7, job-name: forward_train, mem-per-cpu: 8G, #nodelist: 'node[1236]',
+    time: '1-18:00:00'}
+
+  debug: [false]
+  gpu: [true]
+  save-dir: [null]
+
+  dataset-name: [canopus_train]
+  split-file: [data/canopus_train/splits/split_1.tsv]
+  decoy-label: [data/canopus_train/decoy_labels/decoy_label_COMMON.tsv]
+  subform-dir: [data/canopus_train/subformulae/formulae_spec_decoy_label_COMMON]
+
+  seed: [1]
+  num-workers: [8]
+
+  # train-args
+  batch-size: [4]
+  max-decoy: [32]
+  max-epochs: [200]
+  learning-rate: [0.00045]
+  lr-decay-frac: [0.88]
+  weight-decay: [0]
+  max-subpeak: [20]
+
+  # Model args
+  layers: [2]
+  dropout: [0.1]
+  hidden-size: [128]
+  form-encoder: [abs-sines]
+
+  # Ablate args
+  no-ion-info: [false]
+  no-spec-info: [false]
+  no-instrument-info: [false]
+  no-cls-mass-diff: [true]
+
+iterative_args:
+  -  split-file: [data/canopus_train/splits/split_1.tsv]
+     save-dir: [split_1]

@@ -1,0 +1,38 @@
+launcher_args: {experiment_name: fast_filter,
+  script_name: "src/mist_cf/fast_form_score/train.py",
+  slurm_script: launcher_scripts/generic_slurm.sh, 
+  launch_method: local,
+  visible_devices: [0],
+}
+universal_args:
+  _slurm_args:
+  - {_num_gpu: 1, cpus-per-task: 7, job-name: forward_train, mem-per-cpu: 8G, #nodelist: 'node[1236]',
+    time: '1-18:00:00'}
+
+  debug: [false]
+  gpu: [true]
+  save-dir: [null]
+
+  seed: [1]
+  num-workers: [8]
+
+  dataset-file: [data/biomols/biomols_with_decoys.txt]
+  split-file: [data/biomols/biomols_with_decoys_split.tsv]
+
+  # train-args
+  batch-size: [64]
+  max-decoy: [32]
+  max-epochs: [200]
+  learning-rate: [0.00036]
+  lr-decay-frac: [0.86425]
+  weight-decay: [0]
+
+  # Model args
+  layers: [3]
+  dropout: [0.1]
+  hidden-size: [256]
+  form-encoder: [abs-sines]
+
+
+iterative_args:
+  -  save-dir: [split]
