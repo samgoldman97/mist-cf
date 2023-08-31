@@ -13,7 +13,7 @@ trees, MIST-CF adopts a formula transformer neural network architecture and
 learns in a data dependent fashion.
 
 
-Paper: [http://arxiv.org/abs/2307.08240](http://arxiv.org/abs/2307.08240)  
+Paper: [http://arxiv.org/abs/2307.08240](https://arxiv.org/abs/2307.08240)  
 
 ![Model  graphic](mist_cf_graphic.png)
 
