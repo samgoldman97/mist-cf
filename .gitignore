@@ -1,5 +1,9 @@
 # User added
 notebooks/bile_acid_debug/
+prospective
+notebooks/prospective/
+run_scripts/prospective
+preprocessing/prospective
 notebooks/figures/
 quickstart/models
 quickstart/mist_cf_out

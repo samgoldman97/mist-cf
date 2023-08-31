@@ -3,7 +3,7 @@ import pandas as pd
 import time
 import subprocess
 from pathlib import Path
-import os 
+import os
 
 input_file = f"data/demo_specs.mgf"
 base_output = Path("results/timing_experiments/")
@@ -42,6 +42,7 @@ def run_sirius(base_folder, replicate_num=1):
     """
     subprocess.run(sirius_str, shell=True)
 
+
 def run_mist(base_folder, replicate_num=1):
     outfolder = base_folder / f"mist_{replicate_num}/"
     outfolder.mkdir(parents=True, exist_ok=True)
@@ -67,20 +68,22 @@ def time_fn(fn, kwargs):
     end = time.time()
     return end - start
 
+
 out_dicts_mist = []
 out_dicts_sirius = []
 for replicate in replicates:
-    out_time_sirius = time_fn(run_sirius, 
-                              dict(base_folder=base_output,replicate_num=replicate))
-    out_dicts_sirius.append({"Method": "SIRIUS", "Time": out_time_sirius, 
-                      "Specs": 10, "Replicate": replicate})
+    out_time_sirius = time_fn(
+        run_sirius, dict(base_folder=base_output, replicate_num=replicate)
+    )
+    out_dicts_sirius.append(
+        {
+            "Method": "SIRIUS",
+            "Time": out_time_sirius,
+            "Specs": 10,
+            "Replicate": replicate,
+        }
+    )
     print(json.dumps(out_dicts_sirius[-1], indent=2))
-
-    #out_time_mist = time_fn(run_mist, 
-    #                        dict(base_folder=base_output,replicate_num=replicate))
-    #out_dicts_mist.append({"Method": "MIST", "Time": out_time_mist,
-    #                  "Specs": 10, "Replicate": replicate})
-    #print(json.dumps(out_dicts_mist[-1], indent=2))
 
 if len(out_dicts_sirius) > 0:
     df = pd.DataFrame(out_dicts_sirius)

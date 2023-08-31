@@ -70,13 +70,9 @@ ELEMENT_DIM = len(ELEMENT_VECTORS[0])
 
 # Reasonable normalization vector for elements
 # Estimated by max counts (+ 1 when zero)
-NORM_VEC = np.array(
-    [81, 19, 6, 34, 6, 6, 6, 158, 10, 17, 3, 1, 2, 1, 1, 2, 1, 2]
-)
+NORM_VEC = np.array([81, 19, 6, 34, 6, 6, 6, 158, 10, 17, 3, 1, 2, 1, 1, 2, 1, 2])
 
-NORM_VEC_MASS = np.array(
-    NORM_VEC.tolist() + [1471]
-)
+NORM_VEC_MASS = np.array(NORM_VEC.tolist() + [1471])
 
 # Assume 64 is the highest repeat of any 1 atom
 MAX_ELEMENT_NUM = 64
@@ -96,16 +92,23 @@ ION_LST = [
 ]
 
 ion_remap = dict(zip(ION_LST, ION_LST))
-ion_remap.update({
-    "[M+NH4]+": "[M+H3N+H]+",
-    'M+H': '[M+H]+',
-    'M+Na': "[M+Na]+",
-    'M+H-H2O': "[M-H2O+H]+",
-    'M-H2O+H': "[M-H2O+H]+",
-    'M+NH4': "[M+H3N+H]+",
-    'M-2H2O+H': "[M-H4O2+H]+",
-    '[M-2H2O+H]+': "[M-H4O2+H]+",
-})
+ion_remap.update(
+    {
+        "[M+NH4]+": "[M+H3N+H]+",
+        "M+H": "[M+H]+",
+        "M+Na": "[M+Na]+",
+        "M+H-H2O": "[M-H2O+H]+",
+        "M-H2O+H": "[M-H2O+H]+",
+        "M+NH4": "[M+H3N+H]+",
+        "M-2H2O+H": "[M-H4O2+H]+",
+        "[M-2H2O+H]+": "[M-H4O2+H]+",
+        "[M-2(H2O)+H]+": "[M-H4O2+H]+",
+        "[M-3H2O+H]+": "[M-H6O3+H]+",
+        "[M+H-2H2O]+": "[M-H4O2+H]+",
+        "[M+NH4]+": "[M+H3N+H]+",
+        "[M+H-H2O]+": "[M-H2O+H]+",
+    }
+)
 
 ion_to_idx = dict(zip(ION_LST, np.arange(len(ION_LST))))
 
@@ -124,7 +127,7 @@ ion_to_add_vec = {
     "[M+H]+": element_to_position["H"],
     "[M+Na]+": element_to_position["Na"],
     "[M+K]+": element_to_position["K"],
-    "[M-H2O+H]+": - element_to_position["O"] - element_to_position["H"],
+    "[M-H2O+H]+": -element_to_position["O"] - element_to_position["H"],
     "[M+H3N+H]+": element_to_position["N"] + element_to_position["H"] * 4,
     "[M]+": np.zeros_like(element_to_position["H"]),
     "[M-H4O2+H]+": -element_to_position["O"] * 2 - element_to_position["H"] * 3,
@@ -141,7 +144,11 @@ instrument_to_type = {
     "ion trap": "iontrap",
     "FTICR (LCMS)": "fticr",
     "Bruker Q-ToF (LCMS)": "qtof",
-    "Orbitrap (LCMS)": "orbitrap"
+    "Orbitrap (LCMS)": "orbitrap",
+    "ESI-Orbitrap": "orbitrap",
+    "ESI-qTOF": "qtof",
+    "ESI-qToF": "qtof",
+    "ESI-qTof": "qtof",
 }
 
 instruments = sorted(list(set(instrument_to_type.values())))
@@ -152,7 +159,7 @@ instrument_to_tol = {
     "orbitrap": 5,
     "iontrap": 15,
     "fticr": 5,
-    "unknown": 15
+    "unknown": 15,
 }
 
 # Define rdbe mult
@@ -160,42 +167,51 @@ rdbe_mult = np.zeros_like(ELEMENT_VECTORS[0])
 els = ["C", "N", "P", "H", "Cl", "Br", "I", "F"]
 weights = [2, 1, 1, -1, -1, -1, -1, -1]
 for k, v in zip(els, weights):
-    rdbe_mult[element_to_ind[k]] = v 
+    rdbe_mult[element_to_ind[k]] = v
 
 
 def get_ion_idx(ionization: str) -> int:
     """ "map ionization to its index in one hot encoding"""
     return ion_to_idx[ionization]
 
+
 def get_instr_idx(instrument: str) -> int:
-    """ "map instrument to its index in one hot encoding"""
+    """ map instrument to its index in one hot encoding"""
     inst = instrument_to_type.get(instrument, "uknown")
     return instrument_to_idx[inst]
 
+
 def get_instr_tol(instrument: str) -> int:
-    """ "map instrument to its mass tolerance"""
+    """ map instrument to its mass tolerance"""
     inst = instrument_to_type.get(instrument, "uknown")
     return instrument_to_tol[inst]
+
 
 def cross_sum(x, y):
     """cross_sum."""
     return (np.expand_dims(x, 0) + np.expand_dims(y, 1)).reshape(-1, y.shape[-1])
 
 
-def get_all_subsets_dense(dense_formula: str, element_vectors) -> (np.ndarray, np.ndarray):
-    """get_all_subsets.
+def get_all_subsets_dense(
+    dense_formula: str, 
+    element_vectors: np.ndarray
+) -> (np.ndarray, np.ndarray):
+    """_summary_
 
     Args:
-        chem_formula (str): Chem formula
-    Return:
-        Tuple of vecs and their masses
-    """
+        dense_formula (_type_): _description_
+        np (_type_): _description_
 
+    Returns:
+        _type_: _description_
+    """
     non_zero = np.argwhere(dense_formula > 0).flatten()
 
     vectorized_formula = []
     for nonzero_ind in non_zero:
-        temp = element_vectors[nonzero_ind] * np.arange(0, dense_formula[nonzero_ind] + 1).reshape(-1, 1)
+        temp = element_vectors[nonzero_ind] * np.arange(
+            0, dense_formula[nonzero_ind] + 1
+        ).reshape(-1, 1)
         vectorized_formula.append(temp)
 
     zero_vec = np.zeros((1, element_vectors.shape[-1]))
@@ -208,12 +224,19 @@ def get_all_subsets_dense(dense_formula: str, element_vectors) -> (np.ndarray, n
 
 
 def get_all_subsets(chem_formula: str):
+    """_summary_
+
+    Args:
+        chem_formula (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """    
     dense_formula = formula_to_dense(chem_formula)
-    return get_all_subsets_dense(dense_formula,
-                                 element_vectors=ELEMENT_VECTORS)
+    return get_all_subsets_dense(dense_formula, element_vectors=ELEMENT_VECTORS)
 
 
-#@jit(nopython=True)
+# @jit(nopython=True)
 def rdbe_filter(cross_prod):
     """rdbe_filter.
     Args:
@@ -225,14 +248,17 @@ def rdbe_filter(cross_prod):
 
 
 def assign_subforms(form, spec, ion_type, mass_diff_thresh=15):
-    """assign_subforms.
+    """_summary_
 
     Args:
-        form:
-        spec:
-        ion_type:
-        mass_diff_thresh:
-    """
+        form (_type_): _description_
+        spec (_type_): _description_
+        ion_type (_type_): _description_
+        mass_diff_thresh (int, optional): _description_. Defaults to 15.
+
+    Returns:
+        _type_: _description_
+    """    
     cross_prod, masses = get_all_subsets(form)
     spec_masses, spec_intens = spec[:, 0], spec[:, 1]
 
@@ -254,8 +280,7 @@ def assign_subforms(form, spec, ion_type, mass_diff_thresh=15):
     rel_mass_diff = rel_mass_diff[valid_mask]
     formula_inds = formula_inds[valid_mask]
 
-    formulas = np.array([vec_to_formula(j)
-                         for j in cross_prod[formula_inds]])
+    formulas = np.array([vec_to_formula(j) for j in cross_prod[formula_inds]])
     formula_masses = masses_with_ion[formula_inds]
     ion_types = ion_types[formula_inds]
 
@@ -310,24 +335,27 @@ def get_output_dict(
     mass_diff_thresh: float,
     ion_type: str,
 ) -> dict:
-    """get_output_dict.
-    This function attemps to take an array of mass intensity values and assign
-    formula subsets to subpeaks
+    """get_output_dict 
+
     Args:
-        spec (np.ndarray): spec
-        form (str): form
-        abs_mass_diff (float): abs_mass_diff
-        inten_thresh (float): Intensity threshold
+        spec_name (str): _description_
+        spec (np.ndarray): _description_
+        form (str): _description_
+        mass_diff_type (str): _description_
+        mass_diff_thresh (float): _description_
+        ion_type (str): _description_
+
     Returns:
-        python dictionary
+        dict: _description_
     """
-    assert(mass_diff_type == "ppm")
+    assert mass_diff_type == "ppm"
     # This is the case for some erroneous MS2 files for which proc_spec_file return None
     # All the MS2 subpeaks in these erroneous MS2 files has mz larger than parentmass
     output_dict = {"cand_form": form, "cand_ion": ion_type, "output_tbl": None}
     if spec is not None and ion_type in ION_LST:
-        output_dict = assign_subforms(form, spec, ion_type,
-                                      mass_diff_thresh=mass_diff_thresh)
+        output_dict = assign_subforms(
+            form, spec, ion_type, mass_diff_thresh=mass_diff_thresh
+        )
     return output_dict
 
 
@@ -344,7 +372,6 @@ def assign_single_spec(spec_name, export_dicts, output_dir):
     res_dict = {}
     for export_dict in export_dicts:
         output = get_output_dict(**export_dict)
-
 
         res_dict[output["cand_form"]] = {
             "cand_ion": output["cand_ion"],
@@ -374,7 +401,10 @@ def clipped_ppm(mass_diff: np.ndarray, parentmass: np.ndarray) -> np.ndarray:
     return ppm
 
 
-def clipped_ppm_single(cls_mass_diff: float, parentmass: float,):
+def clipped_ppm_single(
+    cls_mass_diff: float,
+    parentmass: float,
+):
     """clipped_ppm_single.
 
     Args:
@@ -392,23 +422,22 @@ def clipped_ppm_single_norm(cls_mass_diff: float, parentmass: float):
     Args:
         cls_mass_diff (float): cls_mass_diff
         parentmass (float): parentmass
-        normalize_factor (float): normalize_factor
     """
     return norm_mass_diff_ppm(clipped_ppm_single(cls_mass_diff, parentmass))
+
 
 def norm_mass_diff_ppm(mass_diff):
     return mass_diff / 10
 
 
-def get_cls_mass_diff(parentmass: float, form: str, ion: str,
-                      corr_electrons=True):
+def get_cls_mass_diff(parentmass: float, form: str, ion: str, corr_electrons=True):
     """get_cls_mass_diff.
 
     Args:
         parentmass (float): parentmass
         form (str): form
         ion (str): ion
-        corr_electrons:
+        corr_electrons (bool): Default True
     """
 
     true_val = formula_mass(form) + ion_to_mass[ion]
@@ -540,17 +569,20 @@ def vec_to_formula(form_vec):
 
 
 def standardize_form(i):
-    """ standardize_form. """
+    """standardize_form."""
     return vec_to_formula(formula_to_dense(i))
 
 
-def standardize_adduct(adduct):
+def standardize_adduct(adduct, fail_silent=False):
     """standardize_adduct."""
     adduct = adduct.replace(" ", "")
-    adduct = ion_remap.get(adduct, adduct)  
-    if adduct not in ION_LST:
-        raise ValueError(f"Adduct {adduct} not in ION_LST") 
-    return adduct
+    adduct = ion_remap.get(adduct, adduct)
+    if fail_silent:
+        return adduct
+    elif adduct not in ION_LST:
+        raise ValueError(f"Adduct {adduct} not in ION_LST")
+    else:
+        return adduct
 
 
 def calc_structure_string_type(structure_string):
@@ -703,8 +735,9 @@ def has_valid_els(chem_formula: str) -> bool:
             return False
     return True
 
+
 def add_ion(form: str, ion: str):
-    """ add_ion.
+    """add_ion.
     Args:
         form (str): form
         ion (str): ion

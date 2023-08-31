@@ -27,7 +27,7 @@ def add_hyperopt_args(parser):
     ha.add_argument("--cpus-per-trial", default=1, type=int)
     ha.add_argument("--gpus-per-trial", default=1, type=float)
     ha.add_argument("--num-h-samples", default=50, type=int)
-    ha.add_argument("--grace-period", default=60*15, type=int)
+    ha.add_argument("--grace-period", default=60 * 15, type=int)
     ha.add_argument("--max-concurrent", default=10, type=int)
     ha.add_argument("--tune-checkpoint", default=None)
 
@@ -37,10 +37,14 @@ def add_hyperopt_args(parser):
     parser.set_defaults(save_dir=save_default)
 
 
-def run_hyperopt(kwargs: dict, score_function: Callable,
-                 param_space_function: Callable,
-                 initial_points: list, gen_shared_data: Callable = lambda params: {}):
-    """ run_hyperopt.
+def run_hyperopt(
+    kwargs: dict,
+    score_function: Callable,
+    param_space_function: Callable,
+    initial_points: list,
+    gen_shared_data: Callable = lambda params: {},
+):
+    """run_hyperopt.
 
     Args:
         kwargs: All dictionary args for hyperopt and train
@@ -52,27 +56,24 @@ def run_hyperopt(kwargs: dict, score_function: Callable,
     ray.init(address="local")
 
     # Fix base_args based upon tune args
-    kwargs['gpu'] = kwargs.get("gpus_per_trial", 0) > 0
-    #max_t = args.max_epochs
+    kwargs["gpu"] = kwargs.get("gpus_per_trial", 0) > 0
+    # max_t = args.max_epochs
 
-    if kwargs['debug']:
-        kwargs['num_h_samples'] = 10
-        kwargs['max_epochs'] = 5
+    if kwargs["debug"]:
+        kwargs["num_h_samples"] = 10
+        kwargs["max_epochs"] = 5
 
-    save_dir = kwargs['save_dir']
-    common.setup_logger(save_dir,
-                        log_name="hyperopt.log",
-                        debug=kwargs.get('debug', False))
+    save_dir = kwargs["save_dir"]
+    common.setup_logger(
+        save_dir, log_name="hyperopt.log", debug=kwargs.get("debug", False)
+    )
     pl.utilities.seed.seed_everything(kwargs.get("seed"))
 
     shared_args = gen_shared_data(kwargs)
 
     # Define score function
     trainable = tune.with_parameters(
-        score_function,
-        base_args=kwargs,
-        orig_dir=Path().resolve(),
-        **shared_args
+        score_function, base_args=kwargs, orig_dir=Path().resolve(), **shared_args
     )
 
     # Dump args
@@ -84,19 +85,31 @@ def run_hyperopt(kwargs: dict, score_function: Callable,
     metric = "val_loss"
 
     # Include cpus and gpus per trial
-    trainable = tune.with_resources(trainable,
-                                    resources=tune.PlacementGroupFactory([
-                                        {"CPU": kwargs.get("cpus_per_trial"),
-                                         "GPU": kwargs.get("gpus_per_trial")},
-                                        {"CPU": kwargs.get("num_workers"),}
-                                    ], strategy="PACK")
-                                    )
+    trainable = tune.with_resources(
+        trainable,
+        resources=tune.PlacementGroupFactory(
+            [
+                {
+                    "CPU": kwargs.get("cpus_per_trial"),
+                    "GPU": kwargs.get("gpus_per_trial"),
+                },
+                {
+                    "CPU": kwargs.get("num_workers"),
+                },
+            ],
+            strategy="PACK",
+        ),
+    )
 
-    search_algo = OptunaSearch(metric=metric, mode="min",
-                               points_to_evaluate=initial_points,
-                               space=param_space_function)
-    search_algo = ConcurrencyLimiter(search_algo,
-                                     max_concurrent=kwargs['max_concurrent'])
+    search_algo = OptunaSearch(
+        metric=metric,
+        mode="min",
+        points_to_evaluate=initial_points,
+        space=param_space_function,
+    )
+    search_algo = ConcurrencyLimiter(
+        search_algo, max_concurrent=kwargs["max_concurrent"]
+    )
 
     tuner = tune.Tuner(
         trainable,
@@ -104,28 +117,30 @@ def run_hyperopt(kwargs: dict, score_function: Callable,
             mode="min",
             metric=metric,
             search_alg=search_algo,
-            scheduler=ASHAScheduler(max_t=24*60*60, #max_t,
-                                    time_attr='time_total_s',
-                                    grace_period=kwargs.get('grace_period'),
-                                    reduction_factor=2),
-            num_samples=kwargs.get("num_h_samples"),),
-        run_config=RunConfig(name=None, local_dir=kwargs['save_dir'])
+            scheduler=ASHAScheduler(
+                max_t=24 * 60 * 60,  # max_t,
+                time_attr="time_total_s",
+                grace_period=kwargs.get("grace_period"),
+                reduction_factor=2,
+            ),
+            num_samples=kwargs.get("num_h_samples"),
+        ),
+        run_config=RunConfig(name=None, local_dir=kwargs["save_dir"]),
     )
 
-    if kwargs.get('tune_checkpoint') is not None:
-        ckpt = str(Path(kwargs['tune_checkpoint']).resolve())
+    if kwargs.get("tune_checkpoint") is not None:
+        ckpt = str(Path(kwargs["tune_checkpoint"]).resolve())
         tuner = tuner.restore(path=ckpt, restart_errored=True)
 
     results = tuner.fit()
     best_trial = results.get_best_result()
-    output = {"score": best_trial.metrics[metric],
-              "config": best_trial.config}
+    output = {"score": best_trial.metrics[metric], "config": best_trial.config}
     out_str = yaml.dump(output, indent=2)
     logging.info(out_str)
     with open(Path(save_dir) / "best_trial.yaml", "w") as f:
         f.write(out_str)
 
     # Output full res table
-    results.get_dataframe().to_csv(Path(save_dir) / "full_res_tbl.tsv",
-                                   sep="\t",
-                                   index=None)
+    results.get_dataframe().to_csv(
+        Path(save_dir) / "full_res_tbl.tsv", sep="\t", index=None
+    )

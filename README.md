@@ -4,7 +4,7 @@
 
 
 
-This repository provides implementations and code examples for MIST-CF, an
+This repository provides implementations and code examples for [MIST-CF](http://arxiv.org/abs/2307.08240), an
 extension of [MIST](https://www.biorxiv.org/content/10.1101/2022.12.30.522318v1) for annotating MS1 precursor masses from MS/MS data in a _de
 novo_ setting. MIST-CF ranks chemical formula and adduct assignments for an
 unknown mass spectrum using an end-to-end energy based modeling approach,
@@ -12,7 +12,8 @@ without referencing any spectrum databases. Instead of computing fragmentation
 trees, MIST-CF adopts a formula transformer neural network architecture and
 learns in a data dependent fashion.
 
-Paper: [https://arxiv.org/abs/2307.08240](https://arxiv.org/abs/2307.08240)  
+
+Paper: [http://arxiv.org/abs/2307.08240](http://arxiv.org/abs/2307.08240)  
 
 ![Model  graphic](mist_cf_graphic.png)
 
@@ -94,7 +95,7 @@ MIST-CF scores the agreement between a precursor formula candidate and an unknow
 Four key datasets were used in the process of this paper: 
 1. biomols: A dataset of biologically relevant molecules that we used to learn a fast filter model
 2. NPLIB1: A public natural products dataset extracted from the GNPS database. NPLIB1 is used for model training and evaluation.
-3. NPLIB1 + NIST: A proprietary dataset of NPLIB1 and NIST20 spectra. This dataset is used for model training and eval uation.
+3. NPLIB1 + NIST: A proprietary dataset of NPLIB1 and NIST20 spectra. This dataset is used for model training and evaluation.
 4. CASMI 2022: A dataset of positive mode spectra from the CASMI 2022 challenge. This dataset is used for prospective analysis.   
 
 We provide instructions for downloading and extracting datasets biomols, NPLIB1, and CASMI 2022 as we preprocessed them.
@@ -108,7 +109,6 @@ extracted from varous sources prepared by [Dührkop et al.](https://pubmed.ncbi.
 
 ```
 # download data and extract it under ./data/biomols
-#https://www.dropbox.com/s/9ary33x575i4q26/biomols.zip
 wget  https://zenodo.org/record/8151490/files/biomols.zip
 
 unzip biomols.zip
@@ -122,7 +122,6 @@ NPLIB1 is a public natural products dataset extracted from the GNPS database. NP
 
 ```
 # download data and extract it under ./data/canopus
-#wget https://www.dropbox.com/s/lik2p04722gw3eo/canopus_train.zip
 wget https://zenodo.org/record/8151490/files/canopus_train.zip
 
 unzip canopus_train.zip
@@ -136,7 +135,6 @@ rm canopus_train.zip
 
 ```
 # download data and extract it under ./data/canopus
-#wget https://www.dropbox.com/s/mgrqb3hulf3d4gf/casmi22.zip
 wget https://zenodo.org/record/8151490/files/casmi22.zip
 
 unzip casmi22.zip
@@ -251,7 +249,7 @@ Additional analyses used for figure generation were conducted in `notebooks/`.
 If you use this repository, please consider citing both our work and the original SIRIUS papers, as we still rely on their deterministic tool for formula enumerations: 
 
 ```
- @misc{goldman2023mistcf,
+@misc{goldman2023mistcf,
       title={MIST-CF: Chemical formula inference from tandem mass spectra}, 
       author={Samuel Goldman and Jiayi Xin and Joules Provenzano and Connor W. Coley},
       year={2023},

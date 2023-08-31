@@ -16,6 +16,5 @@ python src/mist_cf/mist_cf_score/predict_mgf.py \
     --fast-num 256 \
     --instrument-override "Orbitrap (LCMS)" \
     --decomp-ppm 5 \
-    --decomp-filter "RDBE" \
-
+    --decomp-filter "RDBE" 
     # --gpu 

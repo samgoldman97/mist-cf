@@ -1,6 +1,5 @@
 # Predict mist_cf models on the test splits
 mkdir results/mist_cf_predict_casmi22/
-#python -m pdb src/mist_cf/mist_cf_score/predict_mgf.py \
 python src/mist_cf/mist_cf_score/predict_mgf.py \
     --id-key FEATURE_ID \
     --gpu \
@@ -13,10 +12,8 @@ python src/mist_cf/mist_cf_score/predict_mgf.py \
     --fast-num 256 \
     --instrument-override "Orbitrap (LCMS)" \
     --decomp-ppm 5 \
-    --decomp-filter "RDBE" \
+    --decomp-filter "RDBE"
 
-    #--decomp-ppm 5 \
     #--decomp-filter "COMMON" 
-
     #--debug
     #--mgf-file data/nist_canopus/split_1_test_debug.mgf \

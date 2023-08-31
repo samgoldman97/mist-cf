@@ -19,9 +19,15 @@ def extract_ar(form_str):
 class FormDataset(Dataset):
     """FormDataset."""
 
-    def __init__(self, df, num_workers=0, decoys_per_pos=16, 
-                 use_ray: bool = False, val_test: bool = False,
-                 **kwargs):
+    def __init__(
+        self,
+        df,
+        num_workers=0,
+        decoys_per_pos=16,
+        use_ray: bool = False,
+        val_test: bool = False,
+        **kwargs
+    ):
         """__init__.
 
         Args:
@@ -61,7 +67,7 @@ class FormDataset(Dataset):
                 max_cpu=self.num_workers,
                 timeout=4000,
                 max_retries=3,
-                use_ray=use_ray
+                use_ray=use_ray,
             )
 
     def __len__(self):
@@ -78,8 +84,7 @@ class FormDataset(Dataset):
         if self.val_test:
             neg = neg[:sample_num]
         else:
-            neg = np.random.choice(neg, sample_num,
-                                   replace=False)
+            neg = np.random.choice(neg, sample_num, replace=False)
 
         pos_ar = [common.formula_to_dense(pos)]
         neg_ar = [common.formula_to_dense(i) for i in neg]
@@ -127,11 +132,10 @@ class PredDataset(Dataset):
         # Get formulae
         self.cand_forms = self.df["cand_form"].values
         self.cand_ions = self.df["cand_ion"].values
-        
+
         if self.num_workers == 0:
             self.embedded_forms = [
-                common.formula_to_dense(i)
-                for i in tqdm(self.cand_forms)
+                common.formula_to_dense(i) for i in tqdm(self.cand_forms)
             ]
         else:
             self.embedded_forms = common.chunked_parallel(
@@ -153,10 +157,13 @@ class PredDataset(Dataset):
         form = self.cand_forms[idx]
         ion = self.cand_ions[idx]
 
-
         # Create meta
-        outdict = {"spec": spec_name, "form": form, "x": ar,
-                   "ion": ion, }
+        outdict = {
+            "spec": spec_name,
+            "form": form,
+            "x": ar,
+            "ion": ion,
+        }
         return outdict
 
     @classmethod
@@ -167,12 +174,9 @@ class PredDataset(Dataset):
     def collate_fn(input_list):
         """collate_fn"""
         # Stack all decoys
-        str_forms = np.array([i['form'] for i in input_list])
-        x = torch.FloatTensor(np.array([i['x'] for i in input_list]))
-        names = np.array([i['spec'] for i in input_list])
-        ions = np.array([i['ion'] for i in input_list])
-        return_dict = {"names": names,
-                       "str_forms": str_forms,
-                       "x": x,
-                       "ions": ions}
+        str_forms = np.array([i["form"] for i in input_list])
+        x = torch.FloatTensor(np.array([i["x"] for i in input_list]))
+        names = np.array([i["spec"] for i in input_list])
+        ions = np.array([i["ion"] for i in input_list])
+        return_dict = {"names": names, "str_forms": str_forms, "x": x, "ions": ions}
         return return_dict

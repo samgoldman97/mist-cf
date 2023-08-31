@@ -19,11 +19,11 @@ import mist_cf.common as common
 
 SIRIUS_LOC = Path(os.getenv("SIRIUS_PATH"))
 ROUND_FACTOR = 4
-EL_STR_DEFAULT = 'C[0-]N[0-]O[0-]H[0-]S[0-5]P[0-3]I[0-1]Cl[0-1]F[0-1]Br[0-1]'
+EL_STR_DEFAULT = "C[0-]N[0-]O[0-]H[0-]S[0-5]P[0-3]I[0-1]Cl[0-1]F[0-1]Br[0-1]"
 
 
 def parse_element_str(el_str, max_default=999):
-    """ Accept el str and return a dict from el to dict(min=min,max=max)"""
+    """Accept el str and return a dict from el to dict(min=min,max=max)"""
 
     regex = r"([A-Z][a-z]?)(\[\d+-?\d*\])?"
     matches = re.finditer(regex, el_str, re.MULTILINE)
@@ -41,21 +41,26 @@ def parse_element_str(el_str, max_default=999):
 
 
 def run_sirius(
-    masses: list, adduct=None, verbose=False, mass_sort=True, filter_="NONE",
-    ppm=15, max_batch=10000, el_str=EL_STR_DEFAULT, cores=16,
+    masses: list,
+    adduct=None,
+    verbose=False,
+    mass_sort=True,
+    filter_="NONE",
+    ppm=15,
+    max_batch=10000,
+    el_str=EL_STR_DEFAULT,
+    cores=16,
     loglevel="WARNING",
 ):
     """run_sirius."""
 
-    if loglevel == "NONE": 
-        log_cmds = {"stdout": subprocess.DEVNULL,
-                    "stderr": subprocess.DEVNULL }
+    if loglevel == "NONE":
+        log_cmds = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
         loglevel = "WARNING"
     else:
-        log_cmds =  {}
+        log_cmds = {}
 
-
-    if cores == 0: 
+    if cores == 0:
         cores = 1
 
     masses = [np.round(i, ROUND_FACTOR) for i in masses]
@@ -131,8 +136,6 @@ def test():
     new_inds = np.argsort(np.abs(cands_masses - moi))
     cands_sorted = cands[new_inds]
     cands_masses = cands_masses[new_inds]
-
-    # Check if the true form was recovered correctly
 
 
 if __name__ == "__main__":

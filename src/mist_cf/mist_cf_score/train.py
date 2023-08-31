@@ -183,9 +183,9 @@ def train_model():
     dataset_name = kwargs["dataset_name"]
     data_dir = common.get_data_dir(dataset_name)
 
-    subform_dir = Path(kwargs['subform_dir'])
+    subform_dir = Path(kwargs["subform_dir"])
 
-    labels = Path(kwargs['decoy_label'])
+    labels = Path(kwargs["decoy_label"])
     split_file = kwargs["split_file"]
 
     # Get train, val, test inds
@@ -200,11 +200,11 @@ def train_model():
     val_df = df.iloc[val_inds]
     test_df = df.iloc[test_inds]
 
-    if kwargs['debug']:
+    if kwargs["debug"]:
         train_df = train_df[:100]
         val_df = val_df[:100]
         test_df = test_df[:100]
-        kwargs['num_workers'] = 0
+        kwargs["num_workers"] = 0
 
     # num_bins = kwargs.get("num_bins")
     num_workers = kwargs.get("num_workers", 0)
@@ -212,31 +212,31 @@ def train_model():
         train_df,
         data_dir=data_dir,
         subform_dir=subform_dir,
-        max_decoy=kwargs['max_decoy'],
+        max_decoy=kwargs["max_decoy"],
         num_workers=num_workers,
         val_test=False,
         max_subpeak=kwargs["max_subpeak"],
-        ablate_cls_error=not kwargs['cls_mass_diff'],
+        ablate_cls_error=not kwargs["cls_mass_diff"],
     )
     val_dataset = mist_cf_data.FormDataset(
         val_df,
         data_dir=data_dir,
         subform_dir=subform_dir,
-        max_decoy=kwargs['max_decoy'],
+        max_decoy=kwargs["max_decoy"],
         val_test=True,
         num_workers=num_workers,
         max_subpeak=kwargs["max_subpeak"],
-        ablate_cls_error=not kwargs['cls_mass_diff'],
+        ablate_cls_error=not kwargs["cls_mass_diff"],
     )
     test_dataset = mist_cf_data.FormDataset(
         test_df,
         data_dir=data_dir,
         subform_dir=subform_dir,
-        max_decoy=kwargs['max_decoy'],
+        max_decoy=kwargs["max_decoy"],
         val_test=True,
         num_workers=num_workers,
         max_subpeak=kwargs["max_subpeak"],
-        ablate_cls_error=not kwargs['cls_mass_diff'],
+        ablate_cls_error=not kwargs["cls_mass_diff"],
     )
 
     # Define dataloaders
@@ -271,24 +271,23 @@ def train_model():
         weight_decay=kwargs["weight_decay"],
         ion_info=kwargs["ion_info"],
         instrument_info=kwargs["instrument_info"],
-        lr_decay_frac=kwargs['lr_decay_frac'],
-        form_encoder=kwargs['form_encoder'],
+        lr_decay_frac=kwargs["lr_decay_frac"],
+        form_encoder=kwargs["form_encoder"],
         max_subpeak=kwargs["max_subpeak"],
-        cls_mass_diff=kwargs['cls_mass_diff'],
+        cls_mass_diff=kwargs["cls_mass_diff"],
     )
 
-
-    #test_batch = next(iter(train_loader))
-    #peak_types, form_vec, ion_vec,  intens, rel_mass_diffs, num_peaks = (
+    # test_batch = next(iter(train_loader))
+    # peak_types, form_vec, ion_vec,  intens, rel_mass_diffs, num_peaks = (
     #    test_batch["types"],
     #    test_batch["form_vec"],
     #    test_batch["ion_vec"],
     #    test_batch["intens"],
     #    test_batch["rel_mass_diffs"],
     #    test_batch["num_peaks"],
-    #)
+    # )
 
-    #model_outs = model.forward(num_peaks, peak_types, form_vec, ion_vec,
+    # model_outs = model.forward(num_peaks, peak_types, form_vec, ion_vec,
     #                           intens, rel_mass_diffs)
 
     # Create trainer
@@ -299,7 +298,7 @@ def train_model():
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
         dirpath=tb_path,
-        filename="best", #"{epoch}-{val_loss:.2f}",
+        filename="best",  # "{epoch}-{val_loss:.2f}",
         save_weights_only=True,
     )
     earlystop_callback = EarlyStopping(monitor="val_loss", patience=5)

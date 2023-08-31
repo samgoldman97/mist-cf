@@ -1,12 +1,4 @@
-""" 03_create_formulae_decoys.py
-
-Create many formulae decoys for the list of smiles
-
-
-python preprocessing/biomols_scripts/03_create_formulae_decoys.py  --num-decoys
-256
-
-"""
+""" Create formulae decoys. """
 
 import argparse
 from pathlib import Path
@@ -78,6 +70,7 @@ def main():
     df = pd.DataFrame(dict_entries)
     df = df.sort_values(by="mass").reset_index(drop=True)
     df.to_csv(out, index=None, sep="\t")
+
 
 if __name__ == "__main__":
     main()

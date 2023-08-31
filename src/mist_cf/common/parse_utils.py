@@ -56,8 +56,9 @@ def max_thresh_spec(spec: np.ndarray, max_peaks=100, inten_thresh=0.003):
     return out_ar
 
 
-def process_spec_file_unbinned(spec_name: str, data_dir: str, precision=4,
-                               return_meta=False):
+def process_spec_file_unbinned(
+    spec_name: str, data_dir: str, precision=4, return_meta=False
+):
     """process_spec_file_unbinned.
 
     Args:
@@ -85,6 +86,7 @@ def process_spec_file_unbinned(spec_name: str, data_dir: str, precision=4,
     else:
         return (spec_name, merged_spec)
 
+
 def merge_spec_tuples(spec_list, parent_mass, precision=4):
     mz_ind_to_inten = {}
     mz_ind_to_mz = {}
@@ -110,7 +112,6 @@ def merge_spec_tuples(spec_list, parent_mass, precision=4):
     if merged_spec.size != 0:
         merged_spec[:, 1] = merged_spec[:, 1] / merged_spec[:, 1].max()
     return merged_spec
-
 
 
 def bin_spectra(

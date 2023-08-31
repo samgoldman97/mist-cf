@@ -1,7 +1,6 @@
 # Predict mist_cf models on the test splits
 mkdir results/mist_cf_predict_sirius/
 
-#python -m pdb src/mist_cf/mist_cf_score/predict_mgf.py \
 python src/mist_cf/mist_cf_score/predict_mgf.py \
     --id-key FEATURE_ID \
     --gpu \
@@ -40,6 +39,3 @@ CUDA_VISIBLE_DEVICES=3 python src/mist_cf/mist_cf_score/predict_mgf.py \
     --fast-num 256 \
     --decomp-ppm 10 \
     --decomp-filter "RDBE" 
-
-    #--debug
-    #--mgf-file data/nist_canopus/split_1_test_debug.mgf \

@@ -1,6 +1,4 @@
-""" make_splits.py
-Make train-test-val splits by formula.
-"""
+""" Make train-test-val splits by formula. """
 
 
 import argparse
@@ -36,7 +34,7 @@ def get_args():
     args.add_argument(
         "--test-frac",
         type=float,
-        default=0.3,
+        default=0.1,
         help="Percentage of test data out of all data.",
     )
     args.add_argument("--seed", type=int, default=1, help="Random seed be reproducible")
@@ -61,11 +59,10 @@ def main():
     out_with_nist = f"{out_name.stem}_with_nist.tsv"
     out_hyperopt = f"{out_name.stem}_hyperopt_{hyperopt_train_num}.tsv"
 
-
     label_path = Path(label_file)
     df = pd.read_csv(label_path, sep="\t")
 
-    nist_df_subs = df['dataset'] == "nist2020"
+    nist_df_subs = df["dataset"] == "nist2020"
 
     df_nist = df[nist_df_subs].reset_index(drop=True)
     df = df[~nist_df_subs].reset_index(drop=True)
@@ -140,17 +137,17 @@ def main():
     export_df.to_csv(output_dir / out_with_nist, sep="\t", index=False)
 
     # Subset train to 10k for a hyperopt split
-    all_train = (export_df['Fold_0'] == 'train').values
+    all_train = (export_df["Fold_0"] == "train").values
     train_inds = np.where(all_train)[0]
     train_num = len(train_inds)
     to_exclude = max(0, train_num - hyperopt_train_num)
     exclude_inds = np.random.choice(train_inds, to_exclude, replace=False)
 
-    new_train = np.sum((export_df['Fold_0'] == 'train').values)
+    new_train = np.sum((export_df["Fold_0"] == "train").values)
     export_df.loc[exclude_inds, "Fold_0"] = "exclude"
 
     # Verify new export
-    new_train = np.sum((export_df['Fold_0'] == 'train').values)
+    new_train = np.sum((export_df["Fold_0"] == "train").values)
     print("New_train", new_train)
 
     export_df = export_df.sort_values("spec", ascending=True)

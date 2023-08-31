@@ -22,7 +22,7 @@ class XformerModel(pl.LightningModule):
         learning_rate: float = 7e-4,
         weight_decay: float = 0.0,
         form_encoder: str = "abs-sines",
-        **kwargs
+        **kwargs,
     ):
         """_summary_
 
@@ -62,7 +62,7 @@ class XformerModel(pl.LightningModule):
         # Define form and freq embedder
         self.form_embedder = nn_utils.get_embedder(form_encoder)
         self.freq_embedder = FourierEmbedder(d=hidden_size)
-        
+
         # Add 1 for intensity
         self.input_dim = self.form_embedder.full_dim + self.hidden_size + 1
 
@@ -91,9 +91,15 @@ class XformerModel(pl.LightningModule):
         self.peak_attn_layers = nn_utils.get_clones(peak_attn_layer, self.layers)
         self.output_layer = nn.Linear(self.hidden_size, 1)
 
-
-    def forward(self, spec_ars, num_peaks, encoded_formulae, parent_mass_diffs,
-                ion_inputs, instrument_inputs):
+    def forward(
+        self,
+        spec_ars,
+        num_peaks,
+        encoded_formulae,
+        parent_mass_diffs,
+        ion_inputs,
+        instrument_inputs,
+    ):
         """predict spec."""
 
         # Encoded formula
@@ -115,7 +121,7 @@ class XformerModel(pl.LightningModule):
         if self.instrument_info:
             cat_vec.append(instrument_inputs.float())
         cat_vec = torch.cat(cat_vec, -1)
-        
+
         # Expand cat vec to be the same size as the embedded mz in middle dim
         # Then concat
         cat_vec = cat_vec[:, None, :].expand(-1, embedded_mz.shape[1], -1)
@@ -141,20 +147,22 @@ class XformerModel(pl.LightningModule):
         # Get only the class token
         h0 = peak_tensor[:, 0, :]
 
-        output= self.output_layer(h0)
+        output = self.output_layer(h0)
         return output
 
     def _common_step(self, batch, name="train"):
         parent_mass_diffs = batch["rel_mass_diffs"]
         spec_ars, forms = batch["spec_ars"], batch["formula_tensors"]
-        ions = batch['ion_tensors']
+        ions = batch["ion_tensors"]
         num_peaks = batch["num_peaks"]
         instrument_inputs = batch["instrument_tensors"]
         model_outs = self.forward(
-            spec_ars.float(), 
+            spec_ars.float(),
             num_peaks.long(),
-            forms.float(), parent_mass_diffs.float(),
-            ions.float(),  instrument_inputs.float()
+            forms.float(),
+            parent_mass_diffs.float(),
+            ions.float(),
+            instrument_inputs.float(),
         )
         ex_inds = batch["example_inds"].long()
         num_inputs = batch["num_inputs"]
@@ -174,38 +182,35 @@ class XformerModel(pl.LightningModule):
         self.log(f"{name}_loss", nll_loss.mean(), batch_size=len(targ_inds))
         return output_loss
 
-
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, name="train")
-
 
     def validation_step(self, batch, batch_idx):
         return self._common_step(batch, name="val")
 
-
     def test_step(self, batch, batch_idx):
         return self._common_step(batch, name="test")
 
-
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.learning_rate,
-            weight_decay=self.weight_decay
+            self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay
         )
-        scheduler = nn_utils.build_lr_scheduler(optimizer,
-                                                lr_decay_rate=self.lr_decay_frac)
+        scheduler = nn_utils.build_lr_scheduler(
+            optimizer, lr_decay_rate=self.lr_decay_frac
+        )
         ret = {
             "optimizer": optimizer,
             "lr_scheduler": {
-                   "scheduler": scheduler,
-                   "frequency": 1,
-                   "interval": "step"
-            }
+                "scheduler": scheduler,
+                "frequency": 1,
+                "interval": "step",
+            },
         }
         return ret
 
+
 class FourierEmbedder(torch.nn.Module):
-    """ Embed a set of mz float values using frequencies"""
+    """Embed a set of mz float values using frequencies"""
 
     def __init__(self, d=512, logmin=-2.5, logmax=3.3, **kwargs):
         super().__init__()
@@ -216,7 +221,7 @@ class FourierEmbedder(torch.nn.Module):
         lambda_min = np.power(10, -logmin)
         lambda_max = np.power(10, logmax)
         index = torch.arange(np.ceil(d / 2))
-        exp = torch.pow(lambda_max/lambda_min, (2 * index) / (d - 2))
+        exp = torch.pow(lambda_max / lambda_min, (2 * index) / (d - 2))
         freqs = 2 * np.pi * (lambda_min * exp) ** (-1)
 
         self.freqs = nn.Parameter(freqs, requires_grad=False)
@@ -225,7 +230,7 @@ class FourierEmbedder(torch.nn.Module):
         self.freqs.requires_grad = False
 
     def forward(self, mz: torch.FloatTensor):
-        """ forward
+        """forward
 
         Args:
             mz: FloatTensor of shape (batch_size, mz values)
@@ -234,7 +239,6 @@ class FourierEmbedder(torch.nn.Module):
             FloatTensor of shape (batch_size, peak len, mz )
         """
         freq_input = torch.einsum("bi,j->bij", mz, self.freqs)
-        embedded = torch.cat(
-            [torch.sin(freq_input), torch.cos(freq_input)], -1)
-        embedded = embedded[:, :, :self.d]
+        embedded = torch.cat([torch.sin(freq_input), torch.cos(freq_input)], -1)
+        embedded = embedded[:, :, : self.d]
         return embedded

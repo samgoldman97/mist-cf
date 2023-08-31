@@ -23,7 +23,7 @@ class MistNet(pl.LightningModule):
         cls_mass_diff: bool = False,
         form_encoder: str = "abs-sines",
         max_subpeak: int = 10,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -57,34 +57,59 @@ class MistNet(pl.LightningModule):
         )
         self.output_layer = nn.Linear(self.hidden_size, 1)
 
-    def forward(self, num_peaks, peak_types, form_vec, ion_vec, instrument_vec,
-                intens, rel_mass_diffs):
+    def forward(
+        self,
+        num_peaks,
+        peak_types,
+        form_vec,
+        ion_vec,
+        instrument_vec,
+        intens,
+        rel_mass_diffs,
+    ):
         """predict spec."""
         output = self.xformer(
-            num_peaks, peak_types, form_vec, ion_vec, instrument_vec,
-            intens, rel_mass_diffs, return_aux=False
+            num_peaks,
+            peak_types,
+            form_vec,
+            ion_vec,
+            instrument_vec,
+            intens,
+            rel_mass_diffs,
+            return_aux=False,
         )
         output = self.output_layer(output)
         return output
 
-
     def _common_step(self, batch, name="train"):
-        """ _common_step """
+        """_common_step"""
 
-        peak_types, form_vec, ion_vec, instrument_vec, intens, rel_mass_diffs, num_peaks = (
+        (
+            peak_types,
+            form_vec,
+            ion_vec,
+            instrument_vec,
+            intens,
+            rel_mass_diffs,
+            num_peaks,
+        ) = (
             batch["types"],
             batch["form_vec"],
-            batch['ion_vec'],
-            batch['instrument_vec'],
+            batch["ion_vec"],
+            batch["instrument_vec"],
             batch["intens"],
             batch["rel_mass_diffs"],
             batch["num_peaks"],
-
         )
 
         model_outs = self.forward(
-            num_peaks, peak_types, form_vec, ion_vec, instrument_vec, 
-            intens, rel_mass_diffs
+            num_peaks,
+            peak_types,
+            form_vec,
+            ion_vec,
+            instrument_vec,
+            intens,
+            rel_mass_diffs,
         )
         ex_inds = batch["example_inds"].long()
         num_inputs = batch["num_inputs"]
@@ -116,18 +141,18 @@ class MistNet(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.learning_rate,
-            weight_decay=self.weight_decay
+            self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay
         )
-        scheduler = nn_utils.build_lr_scheduler(optimizer,
-                                                lr_decay_rate=self.lr_decay_frac)
+        scheduler = nn_utils.build_lr_scheduler(
+            optimizer, lr_decay_rate=self.lr_decay_frac
+        )
         ret = {
             "optimizer": optimizer,
             "lr_scheduler": {
-                   "scheduler": scheduler,
-                   "frequency": 1,
-                   "interval": "step"
-            }
+                "scheduler": scheduler,
+                "frequency": 1,
+                "interval": "step",
+            },
         }
         return ret
 
@@ -149,7 +174,7 @@ class FormulaTransformer(nn.Module):
         instrument_info: bool = False,
         num_valid_ion: int = 7,
         num_valid_instrument: int = common.max_instr_idx,
-        **kwargs
+        **kwargs,
     ):
         """__init__.
 
@@ -164,6 +189,7 @@ class FormulaTransformer(nn.Module):
             num_heads (int): num_heads
             ion_info (bool): ion_info
             num_valid_ion (int): Num valid ions
+            num_valid_instrument (int): Num valid instruments
             kwargs:
         """
         nn.Module.__init__(self)
@@ -188,31 +214,34 @@ class FormulaTransformer(nn.Module):
         self.instrument_info = instrument_info
         self.formula_dim_base = self.form_encoder.full_dim
 
-        # Also use diffs 
-        self.formula_dim = self.formula_dim_base * 2 
+        # Also use diffs
+        self.formula_dim = self.formula_dim_base * 2
 
         # Add in concatenate features of relative mass diff, intensity, peak types, num peaks
         self.formula_dim += 4
-        
+
         # Optional feats of instrument info and ion info
         if self.instrument_info:
-            self.formula_dim+= self.num_valid_instrument
+            self.formula_dim += self.num_valid_instrument
         if self.ion_info:
             self.formula_dim += self.num_valid_ion
 
         # Use the same encoder for everything (it's just easier)
-        self.formula_encoder = nn_utils.MLPBlocks(input_size=self.formula_dim,
-                                                  hidden_size=self.hidden_size,
-                                                  dropout=spectra_dropout,
-                                                  num_layers=1) 
+        self.formula_encoder = nn_utils.MLPBlocks(
+            input_size=self.formula_dim,
+            hidden_size=self.hidden_size,
+            dropout=spectra_dropout,
+            num_layers=1,
+        )
 
         self.pairwise_featurizer = None
         if self.pairwise_featurization:
-            self.pairwise_featurizer = nn_utils.MLPBlocks(input_size=self.formula_dim_base,
-                                                          hidden_size=self.hidden_size,
-                                                          dropout=spectra_dropout,
-                                                          num_layers=1)
-
+            self.pairwise_featurizer = nn_utils.MLPBlocks(
+                input_size=self.formula_dim_base,
+                hidden_size=self.hidden_size,
+                dropout=spectra_dropout,
+                num_layers=1,
+            )
 
         # Multihead attention block with residuals
         peak_attn_layer = nn_utils.TransformerEncoderLayer(
@@ -226,16 +255,22 @@ class FormulaTransformer(nn.Module):
         self.peak_attn_layers = nn_utils.get_clones(peak_attn_layer, peak_attn_layers)
 
     def forward(
-        self, num_peaks, peak_types, form_vec, ion_vec, instrument_vec,
-        intens, rel_mass_diffs, return_aux=False
+        self,
+        num_peaks,
+        peak_types,
+        form_vec,
+        ion_vec,
+        instrument_vec,
+        intens,
+        rel_mass_diffs,
+        return_aux=False,
     ):
         """forward."""
         # Step 1: Create embeddings
         device = num_peaks.device
-        batch_size, peak_dim, _form_dim  = form_vec.shape
-        
+        batch_size, peak_dim, _form_dim = form_vec.shape
 
-        cls_type = (peak_types == self.cls_type)
+        cls_type = peak_types == self.cls_type
         cls_tokens = form_vec[cls_type]
         diff_vec = cls_tokens[:, None, :] - form_vec
 
@@ -252,9 +287,7 @@ class FormulaTransformer(nn.Module):
 
         inten_tensor = intens[:, :, None]
         rel_mass_diff_tensor = rel_mass_diffs[:, :, None]
-        num_peak_feat = num_peaks[:, None, None].expand(
-            batch_size, peak_dim, 1
-        ) / 10
+        num_peak_feat = num_peaks[:, None, None].expand(batch_size, peak_dim, 1) / 10
 
         cat_input.extend([inten_tensor, num_peak_feat, rel_mass_diff_tensor])
         input_vec = torch.cat(cat_input, -1)

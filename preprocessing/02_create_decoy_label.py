@@ -63,18 +63,22 @@ def get_args():
         help="Set number of available CPUs",
     )
     parser.add_argument(
-        "--fast-model",
-        type=str,
-        default=None,
-        help="Path to fast model checkpoint"
+        "--fast-model", type=str, default=None, help="Path to fast model checkpoint"
     )
 
     return parser.parse_args()
 
 
 def sample_decoys(
-    spec, decoy_ion_lst, decoy_ions, parentmass, max_decoy, sample_strat,
-    temperature, fast_model, device, 
+    spec,
+    decoy_ion_lst,
+    decoy_ions,
+    parentmass,
+    max_decoy,
+    sample_strat,
+    temperature,
+    fast_model,
+    device,
 ):
     """sample_decoys.
 
@@ -93,18 +97,20 @@ def sample_decoys(
     adduct_masses = np.array([common.ion_to_mass[i] for i in decoy_ions])
     form_masses = np.array([common.formula_mass(i) for i in decoy_ion_lst])
     decoy_masses = form_masses + adduct_masses
-    decoy_ppm = common.clipped_ppm(np.abs(parentmass - decoy_masses),
-                                   np.ones_like(decoy_masses) * parentmass) + 1e-20
+    decoy_ppm = (
+        common.clipped_ppm(
+            np.abs(parentmass - decoy_masses), np.ones_like(decoy_masses) * parentmass
+        )
+        + 1e-20
+    )
     sample_num = min(max_decoy, len(decoy_ion_lst))
 
     sample_ind_choices = np.arange(len(decoy_ion_lst))
     if sample_strat == "uniform":
-        #sampled_decoys = np.random.choice(
+        # sampled_decoys = np.random.choice(
         #    decoy_ion_lst, sample_num, replace=False
-        #)
-        sampled_decoys = np.random.choice(
-            sample_ind_choices, sample_num, replace=False
-        )
+        # )
+        sampled_decoys = np.random.choice(sample_ind_choices, sample_num, replace=False)
 
     elif sample_strat == "normalized_inverse":
         weights = np.reciprocal(decoy_ppm)
@@ -133,8 +139,8 @@ def sample_decoys(
 
     elif sample_strat == "fast_filter":
         sampled_decoys = fast_model.fast_filter_sampling(
-            spec, decoy_ion_lst, decoy_ions, max_decoy, device,
-            batch_size = 1024)
+            spec, decoy_ion_lst, decoy_ions, max_decoy, device, batch_size=1024
+        )
     else:
         raise ValueError(f"Weighting method {sample_strat} is not defined :(")
 
@@ -164,7 +170,10 @@ def resample_precursor_fn(true_masses, errors):
     resampling_std = calculate_resampling_std(true_masses, error=errors)
     resample_masses = true_masses * 1
     while not np.all(within_error_thresh):
-        new_masses = np.random.normal(loc=true_masses, scale=resampling_std,)
+        new_masses = np.random.normal(
+            loc=true_masses,
+            scale=resampling_std,
+        )
         new_masses = np.round(new_masses, 4)
 
         resample_masses[~within_error_thresh] = new_masses[~within_error_thresh]
@@ -192,7 +201,6 @@ def main():
         # Load fast model
         fast_model = fast_form_model.FastFFN.load_from_checkpoint(fast_model)
 
-
     # gpu = args.gpu
     # device = torch.device("cuda") if gpu else torch.device("cpu")
     device = torch.device("cpu")
@@ -200,26 +208,23 @@ def main():
 
     df = pd.read_csv(labels_file, sep="\t")
     df = df.drop(columns=["name"])
-    ion_lst = common.ION_LST 
+    ion_lst = common.ION_LST
     if debug:
         # df = df[df['spec'] == "CCMSLIB00000577934"]
         df = df[:100]
-        #num_workers = 0
-        #ion_lst = ["[M]+", "[M+H]+"]
+        # num_workers = 0
+        # ion_lst = ["[M]+", "[M+H]+"]
 
     specs = df["spec"].to_list()
     true_formulae = df["formula"].to_list()
     true_ionizations = df["ionization"].to_list()
     true_masses = [
-        (
-            common.formula_mass(true_form)
-            + common.ion_to_mass[true_ion]
-        )
+        (common.formula_mass(true_form) + common.ion_to_mass[true_ion])
         for true_form, true_ion in zip(true_formulae, true_ionizations)
     ]
 
-    df['true_mass'] = true_masses
-    instruments = df['instrument'].values
+    df["true_mass"] = true_masses
+    instruments = df["instrument"].values
     true_masses = np.array(true_masses)
 
     #  resample ms1 mass and get decoy by different instrument
@@ -258,15 +263,14 @@ def main():
 
         # equation: parentmass = decoy formula + decoy ionization
         decoy_masses = [
-            (parentmass - common.ion_to_mass[ion])
-            for parentmass in precursor_mz
+            (parentmass - common.ion_to_mass[ion]) for parentmass in precursor_mz
         ]
         decoy_masses = decomp.get_rounded_masses(decoy_masses)
         spec2mass = dict(zip(specs, decoy_masses))
 
         # Let's replace decomp.run_sirius
         # Switch to ppm=10 for speed
-        out_dict = decomp.run_sirius(decoy_masses, filter_=decomp_filter, ppm=10)        
+        out_dict = decomp.run_sirius(decoy_masses, filter_=decomp_filter, ppm=10)
         out_dict = {k: {(ion, vv) for vv in v} for k, v in out_dict.items()}
 
         # Update the existing all_out_dicts with the new out_dict
@@ -276,16 +280,15 @@ def main():
 
     entries = list(all_out_dicts.items())
 
-
     def filter_spec_entries(entry):
-        """ filter_spec_entries.""" 
+        """filter_spec_entries."""
         spec, dict_entry = entry
         ions, cands = [], []
         if len(dict_entry) > 0:
             ions, cands = zip(*dict_entry)
         ions, cands = np.array(ions), np.array(cands)
 
-        # Remove the true candidate to create decoy list        
+        # Remove the true candidate to create decoy list
         inds = np.array(cands) != spec2form[spec]
 
         cands = cands[inds]
@@ -304,52 +307,51 @@ def main():
                 max_decoy,
                 sample_strat,
                 softmax_temperature,
-                fast_model, 
+                fast_model,
                 device,
             )
             ions = ions[cand_inds]
             cands = cands[cand_inds]
-        
-        return {"spec": spec, 
-                "was_found": was_found, 
-                "out_ions": ions, 
-                "out_cands": cands}
-    
+
+        return {
+            "spec": spec,
+            "was_found": was_found,
+            "out_ions": ions,
+            "out_cands": cands,
+        }
+
     if num_workers == 0:
         output_dicts = list(map(filter_spec_entries, entries))
     else:
-        output_dicts = common.chunked_parallel(entries, 
-                                               filter_spec_entries, 
-                                               max_cpu=num_workers)
-    
+        output_dicts = common.chunked_parallel(
+            entries, filter_spec_entries, max_cpu=num_workers
+        )
+
     for out_dict in output_dicts:
-        spec = out_dict['spec']
-        cands = out_dict['out_cands']
-        ions = out_dict['out_ions']
-        was_found = out_dict['was_found']
+        spec = out_dict["spec"]
+        cands = out_dict["out_cands"]
+        ions = out_dict["out_ions"]
+        was_found = out_dict["was_found"]
 
         spec_to_form_list[spec] = [str(i) for i in cands]
         spec_to_ion_list[spec] = [str(i) for i in ions]
         spec_to_found[spec] = was_found
 
+    df[f"decoy_formulae"] = [
+        ",".join(spec_to_form_list[i]) if len(spec_to_form_list.get(i, [])) > 0 else ""
+        for i in specs
+    ]
+    df[f"decoy_ions"] = [
+        ",".join(spec_to_ion_list[i]) if len(spec_to_ion_list.get(i, [])) > 0 else ""
+        for i in specs
+    ]
 
-    df[f'decoy_formulae'] = [",".join(spec_to_form_list[i]) 
-                             if len(spec_to_form_list.get(i, [])) > 0
-                             else ""
-                             for i in specs 
-                             ]
-    df[f'decoy_ions'] = [",".join(spec_to_ion_list[i]) 
-                         if len(spec_to_ion_list.get(i, [])) > 0
-                         else ""
-                         for i in specs 
-                         ]
-
-    decoy_forms_is_null = [str(i).strip() == '[]' for i in df['decoy_formulae']]
+    decoy_forms_is_null = [str(i).strip() == "[]" for i in df["decoy_formulae"]]
     print(f"Num switched: {np.sum(decoy_forms_is_null)}")
-    df[decoy_forms_is_null]['decoy_formulae'] = ""
-    df[decoy_forms_is_null]['decoy_ions'] = ""
+    df[decoy_forms_is_null]["decoy_formulae"] = ""
+    df[decoy_forms_is_null]["decoy_ions"] = ""
 
-    df[f'decomp_recover'] = [spec_to_found[i] for i in specs]
+    df[f"decomp_recover"] = [spec_to_found[i] for i in specs]
 
     df["parentmass"] = precursor_mz
     df["abs_mass_diff"] = abs_diffs

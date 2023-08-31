@@ -9,7 +9,7 @@ universal_args:
   - {_num_gpu: 1, cpus-per-task: 7, job-name: forward_train, mem-per-cpu: 8G, #nodelist: 'node[1236]',
     time: '1-18:00:00'}
 
-  debug: [false] # TODOO: unflag
+  debug: [false]
   gpu: [true]
   save-dir: [null]
 

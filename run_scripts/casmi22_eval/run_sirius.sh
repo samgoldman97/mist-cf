@@ -1,4 +1,3 @@
-
 OUTFOLDER_RAW="results/sirius_predict_casmi22/sirius_1_raw/"
 OUTFOLDER="results/sirius_predict_casmi22/sirius_1/"
 mkdir -p $OUTFOLDER
@@ -24,7 +23,7 @@ $SIRIUS_PATH  \
     fingerprint \
     structure \
     write-summaries \
-    --output $OUTFOLDER \
+    --output $OUTFOLDER
 
 # After formula
 # #--ppm-max-ms2 10  \ #fingerprint \ #structure \

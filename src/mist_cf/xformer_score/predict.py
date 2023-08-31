@@ -66,10 +66,10 @@ def get_args():
 def predict():
     args = get_args()
     kwargs = args.__dict__
-    dataset_name = kwargs['dataset_name']
+    dataset_name = kwargs["dataset_name"]
     debug = kwargs["debug"]
 
-    save_dir = Path(kwargs['save_dir'])
+    save_dir = Path(kwargs["save_dir"])
     save_name = kwargs.get("save_name")
     save_name = "formatted_output.tsv" if save_name is None else save_name
     save_name = save_dir / save_name
@@ -89,12 +89,12 @@ def predict():
     data_dir = common.get_data_dir(dataset_name)
 
     # Get corresponding prediction label
-    pred_label_path = Path(kwargs['pred_label'])
+    pred_label_path = Path(kwargs["pred_label"])
     df = pd.read_csv(pred_label_path, sep="\t")
 
     if debug:
         df = df[:200]
-        kwargs['num_workers'] = 0
+        kwargs["num_workers"] = 0
 
     # Get train, val, test inds
     num_workers = kwargs.get("num_workers", 0)
@@ -134,9 +134,9 @@ def predict():
             parent_mass_diffs = batch["rel_mass_diffs"]
             spec_ars = batch["spec_ars"]
             forms = batch["formula_tensors"]
-            ions = batch['ion_tensors']
-            instrument_inputs = batch['instrument_tensors']
-            num_peaks = batch['num_peaks']
+            ions = batch["ion_tensors"]
+            instrument_inputs = batch["instrument_tensors"]
+            num_peaks = batch["num_peaks"]
 
             parent_mass_diffs = parent_mass_diffs.to(device)
             spec_ars = spec_ars.to(device)
@@ -145,10 +145,13 @@ def predict():
             instrument_inputs = instrument_inputs.to(device)
             num_peaks = num_peaks.to(device)
 
-
             model_outs = model.forward(
-                spec_ars.float(), num_peaks.long(),  forms.float(), parent_mass_diffs.float(),
-                ions.float(), instrument_inputs.float(),
+                spec_ars.float(),
+                num_peaks.long(),
+                forms.float(),
+                parent_mass_diffs.float(),
+                ions.float(),
+                instrument_inputs.float(),
             )
             # ex_inds = batch['example_inds'].long()
             # num_inputs = batch['num_inputs']

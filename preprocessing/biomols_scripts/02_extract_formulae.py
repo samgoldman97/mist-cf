@@ -1,11 +1,6 @@
-"""filter_smiles.py
-
-Filter list of smiles
-
-"""
+"""Extract formuale from smiles"""
 
 import argparse
-import numpy as np
 
 import mist_cf.common as common
 

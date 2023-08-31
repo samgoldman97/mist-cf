@@ -34,7 +34,7 @@ universal_args:
   layers: [2]
   dropout: [0.1]
   hidden-size: [128]
-  form-encoder: [abs-sines] #abs-sines]
+  form-encoder: [abs-sines]
 
   # Ablate args
   no-ion-info: [false]

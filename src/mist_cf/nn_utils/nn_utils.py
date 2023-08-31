@@ -1,9 +1,4 @@
 """ nn_utils.py
-
-These classes should accept graphs and return featurizations at each node
-
-The calling class should be responsible for pooling however is best
-
 """
 import math
 import copy
@@ -12,8 +7,9 @@ import torch
 import torch.nn as nn
 
 
-def build_lr_scheduler(optimizer, lr_decay_rate: float,
-                       decay_steps: int = 5000, warmup: int = 100):
+def build_lr_scheduler(
+    optimizer, lr_decay_rate: float, decay_steps: int = 5000, warmup: int = 100
+):
     """build_lr_scheduler.
 
     Args:

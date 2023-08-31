@@ -20,7 +20,7 @@ results = [
 ]
 
 for res_dict in results:
-    save_dir = res_dict['save_dir']
+    save_dir = res_dict["save_dir"]
 
     # Run evaluation
     eval_cmd = f"""

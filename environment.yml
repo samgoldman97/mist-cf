@@ -10,7 +10,7 @@ dependencies:
 - rdkit=2021.03.*
 - conda-forge::python-graphviz=0.17
 - conda-forge::pygraphviz=1.7
-- pytorch-lightning=1.4.*
+- pytorch-lightning=1.6.*
 - pip=21.2.*
 - ipykernel=6.0.*
 - pytorch::pytorch=1.9.* 

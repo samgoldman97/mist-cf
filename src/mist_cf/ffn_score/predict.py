@@ -48,7 +48,6 @@ def get_args():
 
     parser.add_argument(
         "--pred-label",
-        default="data/canopus_train/pred_labels/pred_label_decoy_RDBE_256_22_by_adduct_canopus_test_0.3_val_0.1_22.tsv",
         help="Path to prediction label",
     )
     parser.add_argument(
@@ -56,7 +55,6 @@ def get_args():
     )
     parser.add_argument(
         "--checkpoint-pth",
-        default="results/ffn_score/canopus_[M+H]+_0.1_100_COMMON_ffn_train/version_0/epoch=11-val_loss=1.32.ckpt",
         help="Path to check point file",
     )
 
@@ -66,10 +64,10 @@ def get_args():
 def predict():
     args = get_args()
     kwargs = args.__dict__
-    dataset_name = kwargs['dataset_name']
+    dataset_name = kwargs["dataset_name"]
     debug = kwargs["debug"]
 
-    save_dir = Path(kwargs['save_dir'])
+    save_dir = Path(kwargs["save_dir"])
     save_name = kwargs.get("save_name")
     save_name = "formatted_output.tsv" if save_name is None else save_name
     save_name = save_dir / save_name
@@ -89,12 +87,12 @@ def predict():
     data_dir = common.get_data_dir(dataset_name)
 
     # Get corresponding prediction label
-    pred_label_path = Path(kwargs['pred_label'])
+    pred_label_path = Path(kwargs["pred_label"])
     df = pd.read_csv(pred_label_path, sep="\t")
 
     if debug:
         df = df[:200]
-        kwargs['num_workers'] = 0
+        kwargs["num_workers"] = 0
 
     # Get train, val, test inds
     num_workers = kwargs.get("num_workers", 0)
@@ -135,18 +133,21 @@ def predict():
             parent_mass_diffs = batch["rel_mass_diffs"]
             spec_ars = batch["spec_ars"]
             forms = batch["formula_tensors"]
-            ions = batch['ion_tensors']
-            instrument_tensors = batch['instrument_tensors']
+            ions = batch["ion_tensors"]
+            instrument_tensors = batch["instrument_tensors"]
 
             parent_mass_diffs = parent_mass_diffs.to(device)
             spec_ars = spec_ars.to(device)
             forms = forms.to(device)
             ions = ions.to(device)
-            instrument_tensors = instrument_tensors.to(device)  
+            instrument_tensors = instrument_tensors.to(device)
 
             model_outs = model.forward(
-                spec_ars.float(), forms.float(), parent_mass_diffs.float(),
-                ions.float(), instrument_tensors.float()
+                spec_ars.float(),
+                forms.float(),
+                parent_mass_diffs.float(),
+                ions.float(),
+                instrument_tensors.float(),
             )
             # ex_inds = batch['example_inds'].long()
             # num_inputs = batch['num_inputs']

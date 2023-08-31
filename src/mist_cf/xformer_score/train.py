@@ -1,6 +1,6 @@
 """train.py
 
-Train mist_cf transformer to predict binned specs
+Train transformer on sinusoidal embeddings to predict scores for mol formula
 
 """
 from datetime import datetime
@@ -166,7 +166,7 @@ def train_model():
         train_df = train_df[:100]
         val_df = val_df[:100]
         test_df = test_df[:100]
-        kwargs['num_workers'] = 0
+        kwargs["num_workers"] = 0
 
     num_workers = kwargs.get("num_workers", 0)
 
@@ -227,9 +227,9 @@ def train_model():
         cls_mass_diff=kwargs["cls_mass_diff"],
         instrument_info=kwargs["instrument_info"],
         learning_rate=kwargs["learning_rate"],
-        lr_decay_frac=kwargs['lr_decay_frac'],
-        weight_decay=kwargs['weight_decay'],
-        form_encoder=kwargs['form_encoder']
+        lr_decay_frac=kwargs["lr_decay_frac"],
+        weight_decay=kwargs["weight_decay"],
+        form_encoder=kwargs["form_encoder"],
     )
     # model_outs = model(test_batch['spec_ars'], test_batch['formula_tensors'],)
     # Create trainer
@@ -240,7 +240,7 @@ def train_model():
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
         dirpath=tb_path,
-        filename="best", #"{epoch}-{val_loss:.2f}",
+        filename="best",  # "{epoch}-{val_loss:.2f}",
         save_weights_only=True,
     )
     earlystop_callback = EarlyStopping(monitor="val_loss", patience=5)

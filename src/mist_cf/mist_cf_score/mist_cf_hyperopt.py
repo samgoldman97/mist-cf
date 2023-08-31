@@ -1,8 +1,4 @@
-"""mi_c_cff_hyperopt.py
-
-Hyperopt parameters
-
-"""
+"""Mist CF Hyperopt"""
 import os
 import copy
 import logging
@@ -44,7 +40,6 @@ def score_function(config, base_args, orig_dir=""):
     kwargs["instrument_info"] = not kwargs["no_instrument_info"]
     kwargs["ion_info"] = not kwargs["no_ion_info"]
 
-
     kwargs.update(config)
     save_dir = kwargs["save_dir"]
     pl.utilities.seed.seed_everything(kwargs.get("seed"))
@@ -54,9 +49,9 @@ def score_function(config, base_args, orig_dir=""):
     dataset_name = kwargs["dataset_name"]
     data_dir = common.get_data_dir(dataset_name)
 
-    subform_dir = Path(kwargs['subform_dir'])
+    subform_dir = Path(kwargs["subform_dir"])
 
-    labels = Path(kwargs['decoy_label'])
+    labels = Path(kwargs["decoy_label"])
     split_file = kwargs["split_file"]
 
     # Get train, val, test inds
@@ -68,11 +63,11 @@ def score_function(config, base_args, orig_dir=""):
     val_df = df.iloc[val_inds]
     test_df = df.iloc[test_inds]
 
-    if kwargs['debug']:
+    if kwargs["debug"]:
         train_df = train_df[:100]
         val_df = val_df[:100]
         test_df = test_df[:100]
-        kwargs['num_workers'] = 0
+        kwargs["num_workers"] = 0
 
     # num_bins = kwargs.get("num_bins")
     num_workers = kwargs.get("num_workers", 0)
@@ -80,21 +75,21 @@ def score_function(config, base_args, orig_dir=""):
         train_df,
         data_dir=data_dir,
         subform_dir=subform_dir,
-        max_decoy=kwargs['max_decoy'],
+        max_decoy=kwargs["max_decoy"],
         num_workers=num_workers,
         val_test=False,
         max_subpeak=kwargs["max_subpeak"],
-        ablate_cls_error=not kwargs['cls_mass_diff'],
+        ablate_cls_error=not kwargs["cls_mass_diff"],
     )
     val_dataset = mist_cf_data.FormDataset(
         val_df,
         data_dir=data_dir,
         subform_dir=subform_dir,
-        max_decoy=kwargs['max_decoy'],
+        max_decoy=kwargs["max_decoy"],
         num_workers=num_workers,
         val_test=True,
         max_subpeak=kwargs["max_subpeak"],
-        ablate_cls_error=not kwargs['cls_mass_diff'],
+        ablate_cls_error=not kwargs["cls_mass_diff"],
     )
 
     # Define dataloaders
@@ -143,10 +138,10 @@ def score_function(config, base_args, orig_dir=""):
         weight_decay=kwargs["weight_decay"],
         ion_info=kwargs["ion_info"],
         instrument_info=kwargs["instrument_info"],
-        lr_decay_frac=kwargs['lr_decay_frac'],
-        form_encoder=kwargs['form_encoder'],
+        lr_decay_frac=kwargs["lr_decay_frac"],
+        form_encoder=kwargs["form_encoder"],
         max_subpeak=kwargs["max_subpeak"],
-        cls_mass_diff=kwargs['cls_mass_diff'],
+        cls_mass_diff=kwargs["cls_mass_diff"],
     )
 
     # Create trainer
@@ -196,8 +191,14 @@ def get_param_space(trial):
     trial.suggest_categorical("max_subpeak", [20])
 
     trial.suggest_float("lr_decay_frac", 0.7, 1.0, log=True)
-    trial.suggest_categorical("weight_decay", [1e-6, 1e-7, 0.0],)
-    trial.suggest_categorical("form_encoder", ["abs-sines"],)
+    trial.suggest_categorical(
+        "weight_decay",
+        [1e-6, 1e-7, 0.0],
+    )
+    trial.suggest_categorical(
+        "form_encoder",
+        ["abs-sines"],
+    )
 
 
 def get_initial_points() -> List[Dict]:
@@ -207,7 +208,7 @@ def get_initial_points() -> List[Dict]:
 
     """
     init_base = {
-        "learning_rate": 0.0004467923023496325,
+        "learning_rate": 0.0004,
         "weight_decay": 1e-6,
         "dropout": 0.2,
         "hidden_size": 64,
@@ -215,8 +216,8 @@ def get_initial_points() -> List[Dict]:
         "batch_size": 16,
         "max_subpeak": 20,
         "weight_decay": 1e-6,
-        "lr_decay_frac": 0.7661608872539868,
-        "form_encoder": "abs-sines"
+        "lr_decay_frac": 0.7661,
+        "form_encoder": "abs-sines",
     }
     return [init_base]
 
@@ -224,12 +225,17 @@ def get_initial_points() -> List[Dict]:
 def run_hyperopt():
     args = get_args()
     kwargs = args.__dict__
-    base_hyperopt.run_hyperopt(kwargs=kwargs, score_function=score_function,
-                               param_space_function=get_param_space,
-                               initial_points=get_initial_points())
+    base_hyperopt.run_hyperopt(
+        kwargs=kwargs,
+        score_function=score_function,
+        param_space_function=get_param_space,
+        initial_points=get_initial_points(),
+    )
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     import time
+
     start_time = time.time()
     run_hyperopt()
     end_time = time.time()

@@ -1,17 +1,15 @@
-""" plot_utils.py 
-Set plot utils
-"""
+""" Plot utils """
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 color_scheme = {
-    "sirius":"#EFC7B8",# "#9970c1",
+    "sirius": "#EFC7B8",  # "#9970c1",
     "ffn_ms2": "#cc545e",
-    "mist_cf_ms2": "#6F84AE", #"#568C63", 
+    "mist_cf_ms2": "#6F84AE",  # "#568C63",
     "backup": "#64a860",
     "ffn_ms1": "#b98d3e",
-    "xformer": "#568C63", #"#638ccc",
+    "xformer": "#568C63",  # "#638ccc",
 }
 
 # Define common matplotlib markers for each method for publication
@@ -25,9 +23,14 @@ marker_scheme = {
 }
 
 
-model_order = ["ffn_ms1", "ffn_ms2", "xformer", 
-               "mist_cf_ms2"]
-sirius_order = ["sirius", "sirius_struct", "sirius_submit", "mist_cf_ms2", "mist_cf_ms2_50_peaks"]
+model_order = ["ffn_ms1", "ffn_ms2", "xformer", "mist_cf_ms2"]
+sirius_order = [
+    "sirius",
+    "sirius_struct",
+    "sirius_submit",
+    "mist_cf_ms2",
+    "mist_cf_ms2_50_peaks",
+]
 
 rename_scheme = {
     "sirius": "SIRIUS",
@@ -67,6 +70,7 @@ mr_colors = [
 
 def cm2inch(value):
     return value / 2.54
+
 
 def set_style():
     """set_style"""
@@ -111,5 +115,3 @@ def set_size(w, h, ax=None):
     figw = float(w) / (r - l)
     figh = float(h) / (t - b)
     ax.figure.set_size_inches(figw, figh)
-
-

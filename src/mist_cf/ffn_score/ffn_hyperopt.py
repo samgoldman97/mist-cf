@@ -116,9 +116,9 @@ def score_function(config, base_args, orig_dir=""):
         instrument_info=kwargs["instrument_info"],
         learning_rate=kwargs["learning_rate"],
         num_spec_bins=kwargs["num_bins"],
-        lr_decay_frac=kwargs['lr_decay_frac'],
-        weight_decay=kwargs['weight_decay'],
-        form_encoder=kwargs['form_encoder']
+        lr_decay_frac=kwargs["lr_decay_frac"],
+        weight_decay=kwargs["weight_decay"],
+        form_encoder=kwargs["form_encoder"],
     )
 
     # Create trainer
@@ -126,9 +126,6 @@ def score_function(config, base_args, orig_dir=""):
 
     # Replace with custom callback that utilizes maximum loss during train
     tune_callback = common.TuneReportCallback(["val_loss"])
-
-    # val_check_interval = None#2000 #2000
-    # check_val_every_n_epoch = 1
 
     monitor = "val_loss"
     # tb_path = tb_logger.log_dir
@@ -168,9 +165,14 @@ def get_param_space(trial):
     trial.suggest_categorical("num_bins", list(range(1000, 11000, 1000)))
 
     trial.suggest_float("lr_decay_frac", 0.7, 1.0, log=True)
-    trial.suggest_categorical("weight_decay", [1e-6, 1e-7, 0.0],)
-    trial.suggest_categorical("form_encoder", ["abs-sines"],)
-
+    trial.suggest_categorical(
+        "weight_decay",
+        [1e-6, 1e-7, 0.0],
+    )
+    trial.suggest_categorical(
+        "form_encoder",
+        ["abs-sines"],
+    )
 
 
 def get_initial_points() -> List[Dict]:
@@ -188,7 +190,7 @@ def get_initial_points() -> List[Dict]:
         "num_bins": 5000,
         "weight_decay": 1e-6,
         "lr_decay_frac": 0.8512732067157704,
-        "form_encoder": "abs-sines"
+        "form_encoder": "abs-sines",
     }
     return [init_base]
 
@@ -196,12 +198,17 @@ def get_initial_points() -> List[Dict]:
 def run_hyperopt():
     args = get_args()
     kwargs = args.__dict__
-    base_hyperopt.run_hyperopt(kwargs=kwargs, score_function=score_function,
-                               param_space_function=get_param_space,
-                               initial_points=get_initial_points())
+    base_hyperopt.run_hyperopt(
+        kwargs=kwargs,
+        score_function=score_function,
+        param_space_function=get_param_space,
+        initial_points=get_initial_points(),
+    )
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     import time
+
     start_time = time.time()
     run_hyperopt()
     end_time = time.time()

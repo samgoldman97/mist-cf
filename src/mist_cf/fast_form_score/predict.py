@@ -49,10 +49,10 @@ def get_args():
 def predict():
     args = get_args()
     kwargs = args.__dict__
-    dataset_name = kwargs['dataset_name']
+    dataset_name = kwargs["dataset_name"]
     debug = kwargs["debug"]
 
-    save_dir = Path(kwargs['save_dir'])
+    save_dir = Path(kwargs["save_dir"])
     save_name = kwargs.get("save_name")
     save_name = "formatted_output.tsv" if save_name is None else save_name
     save_name = save_dir / save_name
@@ -72,12 +72,12 @@ def predict():
     data_dir = common.get_data_dir(dataset_name)
 
     # Get corresponding prediction label
-    pred_label_path = Path(kwargs['pred_label'])
+    pred_label_path = Path(kwargs["pred_label"])
     df = pd.read_csv(pred_label_path, sep="\t")
 
     if debug:
         df = df[:200]
-        kwargs['num_workers'] = 0
+        kwargs["num_workers"] = 0
 
     # Get train, val, test inds
     num_workers = kwargs.get("num_workers", 0)
@@ -128,10 +128,13 @@ def predict():
             out_ions.extend(ions)
 
     fn2true_parentmass = dict(df[["spec", "parentmass"]].values)
-    output = {"names": out_names, "forms": out_forms, "scores": out_scores,
-              "ions": out_ions,
-              "parentmasses": [fn2true_parentmass[fn] for fn in out_names],
-              }
+    output = {
+        "names": out_names,
+        "forms": out_forms,
+        "scores": out_scores,
+        "ions": out_ions,
+        "parentmasses": [fn2true_parentmass[fn] for fn in out_names],
+    }
 
     out_df = pd.DataFrame(output)
     out_df = out_df.rename(
@@ -142,6 +145,7 @@ def predict():
 
 if __name__ == "__main__":
     import time
+
     start_time = time.time()
     predict()
     end_time = time.time()

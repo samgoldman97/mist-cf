@@ -13,5 +13,3 @@ CUDA_VISIBLE_DEVICES="1,3" python src/mist_cf/xformer_score/xformer_hyperopt.py 
     --cpus-per-trial 8 \
     --gpus-per-trial 1 \
     --num-h-samples 50 
-    #--no-ms
-    #--gpus-per-trial #0.5 \

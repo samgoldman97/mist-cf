@@ -21,6 +21,7 @@ from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
 import mist_cf.common as common
 from mist_cf.fast_form_score import fast_form_data, fast_form_model
 
+
 def add_args(parser):
     parser.add_argument("--debug", default=False, action="store_true")
     parser.add_argument("--gpu", default=False, action="store_true")
@@ -49,6 +50,7 @@ def add_args(parser):
     parser.add_argument("--hidden-size", default=512, action="store", type=int)
     parser.add_argument("--form-encoder", type=str, default="abs-sines")
     return parser
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -83,8 +85,7 @@ def train_model():
         df = df[:1000]
 
     masses = df["mass"].values
-    train_inds, val_inds, test_inds = common.get_splits(masses, split_file,
-                                                        key="mass")
+    train_inds, val_inds, test_inds = common.get_splits(masses, split_file, key="mass")
 
     train_df = df.iloc[train_inds]
     val_df = df.iloc[val_inds]
@@ -95,13 +96,16 @@ def train_model():
         train_df, num_workers=num_workers, decoys_per_pos=kwargs["max_decoy"]
     )
     val_dataset = fast_form_data.FormDataset(
-        val_df, num_workers=num_workers, decoys_per_pos=kwargs["max_decoy"],
-        val_test=True
+        val_df,
+        num_workers=num_workers,
+        decoys_per_pos=kwargs["max_decoy"],
+        val_test=True,
     )
     test_dataset = fast_form_data.FormDataset(
-        test_df, num_workers=num_workers, decoys_per_pos=kwargs["max_decoy"],
-        val_test=True
-
+        test_df,
+        num_workers=num_workers,
+        decoys_per_pos=kwargs["max_decoy"],
+        val_test=True,
     )
 
     # Define dataloaders
@@ -135,9 +139,9 @@ def train_model():
         layers=kwargs["layers"],
         dropout=kwargs["dropout"],
         learning_rate=kwargs["learning_rate"],
-        lr_decay_frac=kwargs['lr_decay_frac'],
-        weight_decay=kwargs['weight_decay'],
-        form_encoder=kwargs['form_encoder']
+        lr_decay_frac=kwargs["lr_decay_frac"],
+        weight_decay=kwargs["weight_decay"],
+        form_encoder=kwargs["form_encoder"],
     )
     # model_outs = model(test_batch['x'])
 
@@ -149,7 +153,7 @@ def train_model():
     checkpoint_callback = ModelCheckpoint(
         monitor="val_loss",
         dirpath=tb_path,
-        filename="best",# "{epoch}-{val_loss:.2f}",
+        filename="best",  # "{epoch}-{val_loss:.2f}",
         save_weights_only=True,
     )
     earlystop_callback = EarlyStopping(monitor="val_loss", patience=5)
@@ -192,6 +196,7 @@ def train_model():
 
 if __name__ == "__main__":
     import time
+
     start_time = time.time()
     train_model()
     end_time = time.time()

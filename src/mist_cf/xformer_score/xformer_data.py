@@ -9,12 +9,13 @@ from collections import defaultdict
 import mist_cf.common as common
 
 
-class InstrEmbedder():
+class InstrEmbedder:
     def __init__(self):
         self.instrument_mat = np.eye(len(common.instrument_to_idx) + 1)
 
     def embed_instr(self, instrument):
         return self.instrument_mat[common.get_instr_idx(instrument)]
+
 
 def max_peaks(x, max_p=100):
     # x is a N x 2 array
@@ -29,6 +30,7 @@ class XformerDataset(Dataset):
     Args:
         Dataset (_type_): _description_
     """
+
     def __init__(
         self,
         df,
@@ -56,23 +58,31 @@ class XformerDataset(Dataset):
         self.decoy_ppms = []
         self.decoy_instr_vecs = []
         self.true_form_vecs = []
-        self.true_instr_vecs  = []
+        self.true_instr_vecs = []
         self.true_ppms = []
         self.true_ion_vecs = []
         self.true_forms = self.df["formula"].values
-        self.true_instrs = self.df['instrument'].values
+        self.true_instrs = self.df["instrument"].values
 
-        ion_decoys = self.df['decoy_ions'].values
-        formulae_decoys = self.df['decoy_formulae'].values
-        specs = self.df['spec'].values
-        parentmasses = self.df['parentmass'].values
+        ion_decoys = self.df["decoy_ions"].values
+        formulae_decoys = self.df["decoy_formulae"].values
+        specs = self.df["spec"].values
+        parentmasses = self.df["parentmass"].values
         true_formulae = self.df["formula"].values
         true_ions = self.df["ionization"].values
         true_instrs = self.df["instrument"].values
 
         for spec, true_form, true_ion, ions, formulae, parentmass, instrument in tqdm(
-            zip(specs, true_formulae, true_ions, ion_decoys, formulae_decoys, parentmasses, true_instrs,)
-            ):
+            zip(
+                specs,
+                true_formulae,
+                true_ions,
+                ion_decoys,
+                formulae_decoys,
+                parentmasses,
+                true_instrs,
+            )
+        ):
 
             true_form_vec = common.formula_to_dense(true_form)
             self.true_form_vecs.append(true_form_vec)
@@ -83,17 +93,20 @@ class XformerDataset(Dataset):
             ion_encoding = self.ion_mat[common.get_ion_idx(true_ion)]
             self.true_ion_vecs.append(ion_encoding)
 
-            cls_mass_diff = common.get_cls_mass_diff(parentmass,
-                                                     form=true_form,
-                                                     ion=true_ion,
-                                                     corr_electrons=True)
-            cls_ppm = common.clipped_ppm_single_norm(cls_mass_diff,
-                                                     parentmass)
+            cls_mass_diff = common.get_cls_mass_diff(
+                parentmass, form=true_form, ion=true_ion, corr_electrons=True
+            )
+            cls_ppm = common.clipped_ppm_single_norm(cls_mass_diff, parentmass)
             self.true_ppms.append(cls_ppm)
 
-
             ion_sublist, formulae_sublist = ions.split(","), formulae.split(",")
-            decoy_instr_vecs, decoy_forms, decoy_form_vecs, decoy_ion_vecs, decoy_ppms = [], [], [], [], []
+            (
+                decoy_instr_vecs,
+                decoy_forms,
+                decoy_form_vecs,
+                decoy_ion_vecs,
+                decoy_ppms,
+            ) = ([], [], [], [], [])
             for ion, formula in zip(ion_sublist, formulae_sublist):
                 if ion == "" or ion == "[]":
                     continue
@@ -112,12 +125,10 @@ class XformerDataset(Dataset):
                 decoy_instr_vecs.append(true_instr_vec)
 
                 # calculate ppm for parentmass
-                cls_mass_diff = common.get_cls_mass_diff(parentmass,
-                                                         form=formula,
-                                                         ion=ion,
-                                                         corr_electrons=True)
-                cls_ppm = common.clipped_ppm_single_norm(cls_mass_diff,
-                                                         parentmass)
+                cls_mass_diff = common.get_cls_mass_diff(
+                    parentmass, form=formula, ion=ion, corr_electrons=True
+                )
+                cls_ppm = common.clipped_ppm_single_norm(cls_mass_diff, parentmass)
                 decoy_ppms.append(cls_ppm)
 
             self.decoy_instr_vecs.append(decoy_instr_vecs)
@@ -157,20 +168,18 @@ class XformerDataset(Dataset):
         self.spec_ars = spec_outputs
         _spec_names, self.spec_ars = zip(*self.spec_ars)
 
-
     def __len__(self):
         return len(self.df)
-
 
     def __getitem__(self, idx: int):
         name = self.spec_names[idx]
         ar = self.spec_ars[idx]
-        ar = max_peaks(ar, max_p=100) 
+        ar = max_peaks(ar, max_p=100)
 
         decoy_formulae = np.array(self.decoy_forms[idx])
         decoy_cls_ppm = np.array(self.decoy_ppms[idx])
         decoy_ion_vecs = np.array(self.decoy_ion_vecs[idx])
-        decoy_instr_vecs =  np.array(self.decoy_instr_vecs[idx])
+        decoy_instr_vecs = np.array(self.decoy_instr_vecs[idx])
 
         true_formula = self.true_forms[idx]
         true_cls_ppm = self.true_ppms[idx]
@@ -179,21 +188,20 @@ class XformerDataset(Dataset):
 
         embedded_true = self.true_form_vecs[idx]
         embedded_decoy = np.array(self.decoy_form_vecs[idx])
-        
+
         full_decoy_idx_list = list(range(len(decoy_formulae)))
         num_decoys = len(full_decoy_idx_list)
         num_sample = min(self.max_decoy, num_decoys)
         if self.val_test:
             sample_inds = np.arange(0, num_sample)
         else:
-            sample_inds = np.random.choice(num_decoys, num_sample,
-                                           replace=False)
+            sample_inds = np.random.choice(num_decoys, num_sample, replace=False)
 
         decoy_form_lst = decoy_formulae[sample_inds].tolist()
         embedded_decoy_lst = embedded_decoy[sample_inds].tolist()
         decoy_cls_ppm_lst = decoy_cls_ppm[sample_inds].tolist()
         decoy_ion_vecs = decoy_ion_vecs[sample_inds].tolist()
-        decoy_instr_vecs  = decoy_instr_vecs[sample_inds].tolist()
+        decoy_instr_vecs = decoy_instr_vecs[sample_inds].tolist()
 
         input_formulae = [embedded_true] + embedded_decoy_lst
         input_cls_ppms = [true_cls_ppm] + decoy_cls_ppm_lst
@@ -205,7 +213,10 @@ class XformerDataset(Dataset):
         # concatenate cls tokens
         parent_masses = np.vstack(input_formulae).dot(common.VALID_MONO_MASSES)
         cls_tokens = np.vstack([parent_masses, 2 * np.ones_like(parent_masses)]).T
-        input_ars = [np.vstack([cls_token, input_ar]) for input_ar, cls_token in zip(input_ars, cls_tokens)]
+        input_ars = [
+            np.vstack([cls_token, input_ar])
+            for input_ar, cls_token in zip(input_ars, cls_tokens)
+        ]
 
         cand_formulae = [true_formula] + decoy_form_lst
         matched = [True] + [False] * len(decoy_form_lst)
@@ -260,7 +271,7 @@ class XformerDataset(Dataset):
 
         formula_tensors = torch.stack([torch.tensor(spec) for spec in formulae_inputs])
         ion_tensors = torch.stack([torch.tensor(spec) for spec in ion_inputs])
-        instr_tensors  = torch.stack([torch.tensor(instr) for instr in instr_inputs])
+        instr_tensors = torch.stack([torch.tensor(instr) for instr in instr_inputs])
 
         rel_diff_tensors = torch.FloatTensor(cls_ppm_inputs)[:, None]
         matched = torch.BoolTensor(matched)
@@ -308,7 +319,6 @@ class PredDataset(Dataset):
         self.ion_mat = np.eye(len(common.ION_LST))
         self.instr_embedder = InstrEmbedder()
 
-
         # for each (spec, cand_form, cand_ion) tuple, there is one corresponding embedded form
         self.spec_names = self.df["spec"].values
         self.cand_forms = self.df["cand_form"].values
@@ -320,20 +330,15 @@ class PredDataset(Dataset):
         self.cls_ppms = []
         self.ion_vecs = []
 
-        for cand_form, cand_ion, parentmass, instrument  in zip(self.cand_forms,
-                                                                self.cand_ions,
-                                                                self.parentmasses,
-                                                                self.instruments
-                                                   ):
-
+        for cand_form, cand_ion, parentmass, instrument in zip(
+            self.cand_forms, self.cand_ions, self.parentmasses, self.instruments
+        ):
 
             # calculate ppm for parentmass
-            cls_mass_diff = common.get_cls_mass_diff(parentmass,
-                                                     form=cand_form,
-                                                     ion=cand_ion,
-                                                     corr_electrons=True)
-            cls_ppm = common.clipped_ppm_single_norm(cls_mass_diff,
-                                                     parentmass)
+            cls_mass_diff = common.get_cls_mass_diff(
+                parentmass, form=cand_form, ion=cand_ion, corr_electrons=True
+            )
+            cls_ppm = common.clipped_ppm_single_norm(cls_mass_diff, parentmass)
             self.cls_ppms.append(cls_ppm)
 
             form_vec = common.formula_to_dense(cand_form)
@@ -419,8 +424,8 @@ class PredDataset(Dataset):
         binned_inputs = [i["input_ar"] for j in input_list for i in j]
         formulae_inputs = [i["input_form"] for j in input_list for i in j]
         cls_ppm_inputs = [i["input_cls_ppm"] for j in input_list for i in j]
-        ion_inputs = [j['input_ion'] for i in input_list for j in i]
-        instr_inputs = [j['instr_vec'] for i in input_list for j in i]
+        ion_inputs = [j["input_ion"] for i in input_list for j in i]
+        instr_inputs = [j["instr_vec"] for i in input_list for j in i]
 
         cand_ions = [i["cand_ion"] for j in input_list for i in j]
         str_forms = np.array([i["formula"] for j in input_list for i in j])
@@ -437,7 +442,6 @@ class PredDataset(Dataset):
         spectra_tensors = torch.nn.utils.rnn.pad_sequence(
             spectra_tensors, batch_first=True, padding_value=0
         )
-
 
         return_dict = {
             "names": names,

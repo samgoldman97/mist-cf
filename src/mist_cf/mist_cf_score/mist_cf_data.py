@@ -1,9 +1,4 @@
-"""
-There are several thing need to note in mist_cf data:
-1. one data point is (spec_ms_file_name, ms2_spec, parentmass, candidate form, candidate ion,
-                        candidate subformula assignment)
-2. # decoys in decoy != # data point since some candidate form does not have corresponding
-    subformula assignment
+"""Mist CF data
 """
 
 import logging
@@ -23,17 +18,15 @@ cls_type = cat_types.get("cls")
 
 
 def double_unroll(input_list, key, cast_fn=lambda x: x):
-    return [cast_fn(j)
-            for i in input_list
-            for j in i[key]]
+    return [cast_fn(j) for i in input_list for j in i[key]]
 
 
 def pad_stack(tensors, padding_amts):
-    """ pad_stack. """
+    """pad_stack."""
     num_dims = len(tensors[0].shape)
     zeros = (num_dims - 1) * 2 + 1
     tensors = [
-        torch.nn.functional.pad(i, (*([0]*zeros), pad_len))
+        torch.nn.functional.pad(i, (*([0] * zeros), pad_len))
         for i, pad_len in zip(tensors, padding_amts)
     ]
     tensors = torch.stack(tensors, dim=0)
@@ -46,7 +39,7 @@ to_long = lambda x: torch.LongTensor(x)
 
 
 class JsonExtractor:
-    """ JsonExtractor.
+    """JsonExtractor.
 
     Abstract parsing to inject as dependen;cy
 
@@ -63,11 +56,12 @@ class JsonExtractor:
     def get_instrument_embed(self, instrument):
         return self.instrument_mat[common.get_instr_idx(instrument)]
 
-    def extract_json(self, json_obj, form, ion, parentmass, instrument,
-                    ablate_cls_error=False):
+    def extract_json(
+        self, json_obj, form, ion, parentmass, instrument, ablate_cls_error=False
+    ):
 
-        cand_tbl = json_obj['cand_tbl']
-        assert (json_obj['cand_ion'] == ion)
+        cand_tbl = json_obj["cand_tbl"]
+        assert json_obj["cand_ion"] == ion
 
         # embed true_formula and true decoy ROOT
         embed_form = common.formula_to_dense(form)
@@ -77,9 +71,9 @@ class JsonExtractor:
         if ablate_cls_error:
             cls_ppm = 0
         else:
-            cls_mass_diff = common.get_cls_mass_diff(parentmass, form=form,
-                                                    ion=ion,
-                                                    corr_electrons=True)
+            cls_mass_diff = common.get_cls_mass_diff(
+                parentmass, form=form, ion=ion, corr_electrons=True
+            )
             cls_ppm = common.clipped_ppm_single_norm(cls_mass_diff, parentmass)
         if cand_tbl is None:
             form_vecs = []
@@ -89,14 +83,16 @@ class JsonExtractor:
             rel_mass_diffs = []
         else:
             # Embed peak subtypes
-            form_vecs = list(map(common.formula_to_dense,
-                                 cand_tbl['formula'][:self.max_subpeak]))
-            ion_vecs = list(map(self.get_ion_embed,
-                                cand_tbl['ions'][:self.max_subpeak]))
+            form_vecs = list(
+                map(common.formula_to_dense, cand_tbl["formula"][: self.max_subpeak])
+            )
+            ion_vecs = list(
+                map(self.get_ion_embed, cand_tbl["ions"][: self.max_subpeak])
+            )
             peak_types = [cat_types.get("frags")] * len(form_vecs)
             frag_intens = cand_tbl["ms2_inten"][: self.max_subpeak]
 
-            rel_mass_diffs = np.array(cand_tbl['mass_diff'][: self.max_subpeak])
+            rel_mass_diffs = np.array(cand_tbl["mass_diff"][: self.max_subpeak])
             rel_mass_diffs = common.norm_mass_diff_ppm(rel_mass_diffs).tolist()
 
         # Add root to this
@@ -109,14 +105,14 @@ class JsonExtractor:
         embed_instrument = self.get_instrument_embed(instrument)
         instrument_vecs = [embed_instrument] * len(form_vecs)
 
-
-        return {"form_vecs": form_vecs,
-                "ion_vecs": ion_vecs,
-                "instrument_vecs": instrument_vecs,
-                "peak_types": peak_types,
-                "frag_intens": frag_intens,
-                "rel_mass_diffs": rel_mass_diffs,
-                }
+        return {
+            "form_vecs": form_vecs,
+            "ion_vecs": ion_vecs,
+            "instrument_vecs": instrument_vecs,
+            "peak_types": peak_types,
+            "frag_intens": frag_intens,
+            "rel_mass_diffs": rel_mass_diffs,
+        }
 
 
 class FormDataset(Dataset):
@@ -147,7 +143,7 @@ class FormDataset(Dataset):
         self.df = df.fillna("").reset_index()
 
         # Filter out all entries where "formula == []"
-        self.df = self.df[self.df['decoy_formulae'] != "[]"].reset_index(drop=True)
+        self.df = self.df[self.df["decoy_formulae"] != "[]"].reset_index(drop=True)
 
         self.num_workers = num_workers
         self.data_dir = data_dir
@@ -157,26 +153,23 @@ class FormDataset(Dataset):
         self.ablate_cls_error = ablate_cls_error
         self.json_extractor = JsonExtractor(max_subpeak=max_subpeak)
 
-        self.spec_names = self.df['spec'].values
-        self.instruments = self.df['instrument'].values
-        self.parentmasses = self.df['parentmass'].values
-        self.json_paths = [subform_dir / f"{i}.json"
-                           for i in self.spec_names]
-        self.true_formulae = self.df['formula'].values
-        self.true_ions = self.df['ionization'].values
+        self.spec_names = self.df["spec"].values
+        self.instruments = self.df["instrument"].values
+        self.parentmasses = self.df["parentmass"].values
+        self.json_paths = [subform_dir / f"{i}.json" for i in self.spec_names]
+        self.true_formulae = self.df["formula"].values
+        self.true_ions = self.df["ionization"].values
 
-        ion_decoys = self.df['decoy_ions'].values
-        formulae_decoys = self.df['decoy_formulae'].values
+        ion_decoys = self.df["decoy_ions"].values
+        formulae_decoys = self.df["decoy_formulae"].values
 
-        self.decoy_ions = [i.split(",") if len(i) > 0 else []
-                           for i in ion_decoys]
-        self.decoy_formulae = [i.split(",") if len(i) > 0 else []
-                               for i in formulae_decoys]
-
+        self.decoy_ions = [i.split(",") if len(i) > 0 else [] for i in ion_decoys]
+        self.decoy_formulae = [
+            i.split(",") if len(i) > 0 else [] for i in formulae_decoys
+        ]
 
     def __len__(self):
         return len(self.df)
-
 
     def __getitem__(self, idx: int):
         """__getitem__.
@@ -204,8 +197,7 @@ class FormDataset(Dataset):
         if self.val_test:
             sample_inds = np.arange(0, num_sample)
         else:
-            sample_inds = np.random.choice(num_decoys, num_sample,
-                                           replace=False)
+            sample_inds = np.random.choice(num_decoys, num_sample, replace=False)
 
         decoy_formulae = decoy_formulae[sample_inds].tolist()
         decoy_ions = decoy_ions[sample_inds].tolist()
@@ -215,19 +207,28 @@ class FormDataset(Dataset):
             json_object = json.load(openfile)
 
         true_json = self.json_extractor.extract_json(
-            json_obj=json_object[true_formula], form=true_formula,
-            ion=true_ion, parentmass=parentmass, instrument=instrument,
-            ablate_cls_error=self.ablate_cls_error
+            json_obj=json_object[true_formula],
+            form=true_formula,
+            ion=true_ion,
+            parentmass=parentmass,
+            instrument=instrument,
+            ablate_cls_error=self.ablate_cls_error,
         )
 
-
-        peak_types_list, form_vecs_list, ion_vecs_list, instrument_vecs_list, intens_list, diffs_list = (
-            [true_json['peak_types']],
-            [true_json['form_vecs']],
-            [true_json['ion_vecs']],
-            [true_json['instrument_vecs']],
-            [true_json['frag_intens']],
-            [true_json['rel_mass_diffs']]
+        (
+            peak_types_list,
+            form_vecs_list,
+            ion_vecs_list,
+            instrument_vecs_list,
+            intens_list,
+            diffs_list,
+        ) = (
+            [true_json["peak_types"]],
+            [true_json["form_vecs"]],
+            [true_json["ion_vecs"]],
+            [true_json["instrument_vecs"]],
+            [true_json["frag_intens"]],
+            [true_json["rel_mass_diffs"]],
         )
 
         # Extract decoys
@@ -237,17 +238,20 @@ class FormDataset(Dataset):
                 continue
             decoy_tbl = json_object[decoy_formula]
             decoy_json = self.json_extractor.extract_json(
-                json_obj=decoy_tbl, form=decoy_formula, ion=decoy_ion,
-                parentmass=parentmass, instrument=instrument,
-                ablate_cls_error=self.ablate_cls_error
+                json_obj=decoy_tbl,
+                form=decoy_formula,
+                ion=decoy_ion,
+                parentmass=parentmass,
+                instrument=instrument,
+                ablate_cls_error=self.ablate_cls_error,
             )
 
-            peak_types_list.append(decoy_json['peak_types'])
-            form_vecs_list.append(decoy_json['form_vecs'])
-            ion_vecs_list.append(decoy_json['ion_vecs'])
-            instrument_vecs_list.append(decoy_json['instrument_vecs'])
-            intens_list.append(decoy_json['frag_intens'])
-            diffs_list.append(decoy_json['rel_mass_diffs'])
+            peak_types_list.append(decoy_json["peak_types"])
+            form_vecs_list.append(decoy_json["form_vecs"])
+            ion_vecs_list.append(decoy_json["ion_vecs"])
+            instrument_vecs_list.append(decoy_json["instrument_vecs"])
+            intens_list.append(decoy_json["frag_intens"])
+            diffs_list.append(decoy_json["rel_mass_diffs"])
 
         # Create meta
         cand_formulae = [true_formula] + decoy_formulae
@@ -261,7 +265,6 @@ class FormDataset(Dataset):
             "ions": cand_ions,
             "instruments": cand_instruments,
             "num_inputs": len(matched),
-
             # Define input components
             "peak_type_list": peak_types_list,
             "form_vec_list": form_vecs_list,
@@ -272,16 +275,14 @@ class FormDataset(Dataset):
         }
         return outdict
 
-
     @classmethod
     def get_collate_fn(cls):
         return FormDataset.collate_fn
 
-
     @staticmethod
     def collate_fn(input_list):
         """collate_fn"""
-         
+
         # Stack all decoys
         names = [j["name"] for j in input_list]
         str_forms = [j for i in input_list for j in i["formulae"]]
@@ -302,7 +303,9 @@ class FormDataset(Dataset):
         type_tensors = double_unroll(input_list, "peak_type_list", to_float)
         peak_form_tensors = double_unroll(input_list, "form_vec_list", to_float)
         peak_ion_tensors = double_unroll(input_list, "ion_vec_list", to_float)
-        peak_instrument_tensors = double_unroll(input_list, "instrument_vec_list", to_float)
+        peak_instrument_tensors = double_unroll(
+            input_list, "instrument_vec_list", to_float
+        )
 
         peak_form_lens = np.array([i.shape[0] for i in peak_form_tensors])
         max_len = np.max(peak_form_lens)
@@ -349,20 +352,20 @@ class PredDataset(Dataset):
         ablate_cls_error: bool = False,
         **kwargs,
     ):
-        """__init__.
+        """__init__ _summary_
 
         Args:
-            df:
-            data_dir:
-            subform_dir:
-            num_workers:
-            kwargs:
-        """
+            df (_type_): _description_
+            subform_dir (_type_): _description_
+            max_subpeak (_type_): _description_
+            num_workers (int, optional): _description_. Defaults to 0.
+            ablate_cls_error (bool, optional): _description_. Defaults to False.
+        """    
         self.df = df
         self.num_workers = num_workers
         self.subform_dir = Path(subform_dir)
         self.max_subpeak = max_subpeak
-        self.ablate_cls_error = ablate_cls_error,
+        self.ablate_cls_error = (ablate_cls_error,)
         self.json_extractor = JsonExtractor(max_subpeak=max_subpeak)
 
         self.names = self.df["spec"].values
@@ -388,10 +391,8 @@ class PredDataset(Dataset):
                 cur_new_ind += 1
         self.len = len(self.new_ind_to_old_inds)
 
-
     def __len__(self):
         return self.len
-
 
     def __getitem__(self, idx: int):
         spec_name = self.new_ind_to_name[idx]
@@ -408,28 +409,29 @@ class PredDataset(Dataset):
             instrument = self.cand_instruments[list_idx]
             decoy_tbl = json_object[formula]
             decoy_json = self.json_extractor.extract_json(
-                json_obj=decoy_tbl, form=formula, ion=ion,
-                parentmass=parentmass, instrument=instrument,
-                ablate_cls_error=self.ablate_cls_error
+                json_obj=decoy_tbl,
+                form=formula,
+                ion=ion,
+                parentmass=parentmass,
+                instrument=instrument,
+                ablate_cls_error=self.ablate_cls_error,
             )
-            out_dict['name'].append(spec_name)
-            out_dict['formula'].append(formula)
-            out_dict['ion'].append(ion)
-            out_dict['instrument'].append(instrument)
-            out_dict['parentmass'].append(parentmass)
-            out_dict['peak_type'].append(decoy_json['peak_types'])
-            out_dict['form_vecs'].append(decoy_json['form_vecs'])
-            out_dict['ion_vecs'].append(decoy_json['ion_vecs'])
-            out_dict['instrument_vecs'].append(decoy_json['instrument_vecs'])
-            out_dict['frag_intens'].append(decoy_json['frag_intens'])
-            out_dict['rel_mass_diffs'].append(decoy_json['rel_mass_diffs'])
+            out_dict["name"].append(spec_name)
+            out_dict["formula"].append(formula)
+            out_dict["ion"].append(ion)
+            out_dict["instrument"].append(instrument)
+            out_dict["parentmass"].append(parentmass)
+            out_dict["peak_type"].append(decoy_json["peak_types"])
+            out_dict["form_vecs"].append(decoy_json["form_vecs"])
+            out_dict["ion_vecs"].append(decoy_json["ion_vecs"])
+            out_dict["instrument_vecs"].append(decoy_json["instrument_vecs"])
+            out_dict["frag_intens"].append(decoy_json["frag_intens"])
+            out_dict["rel_mass_diffs"].append(decoy_json["rel_mass_diffs"])
         return out_dict
-
 
     @classmethod
     def get_collate_fn(cls):
         return PredDataset.collate_fn
-
 
     @staticmethod
     def collate_fn(input_list):
@@ -451,7 +453,6 @@ class PredDataset(Dataset):
         peak_form_lens = np.array([i.shape[0] for i in peak_form_tensors])
         max_len = np.max(peak_form_lens)
         padding = max_len - peak_form_lens
-
 
         type_tensors = pad_stack(type_tensors, padding).long()
         inten_tensors = pad_stack(inten_tensors, padding).float()

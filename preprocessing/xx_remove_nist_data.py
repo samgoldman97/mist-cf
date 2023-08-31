@@ -1,3 +1,4 @@
+""" Remove nist data from processed data to help with public release """
 import pandas as pd
 from pathlib import Path
 from shutil import copyfile, copytree
@@ -22,12 +23,12 @@ if True:
         df = pd.read_csv(src_file, sep="\t")
         # Sub 1
         # Filter df where "dataset == "canopus_train"
-        #df1 = df[df["dataset"] == "canopus_train"]
+        # df1 = df[df["dataset"] == "canopus_train"]
         # Sub 2
         # Filter spec where "nist" not in spec
         df2 = df[~df["spec"].str.contains("nist")]
         df2.to_csv(trg_file, sep="\t", index=False)
-    
+
 src_pred_labels = src_dir_base / "pred_labels"
 trg_pred_labels = dst_dir_base / "pred_labels"
 
@@ -79,7 +80,7 @@ trg_subformulae.mkdir(parents=True, exist_ok=True)
 # Loop over all spec and copy only if "nist" not in spec
 if True:
     for src_file in src_subformulae.glob("*.json"):
-        trg_file = trg_subformulae/ src_file.name
+        trg_file = trg_subformulae / src_file.name
         src_name = src_file.name
         if "nist" not in src_name:
             print(src_file)

@@ -1,12 +1,5 @@
-""" 04_create_formulae_split.py
-
-Create formulae split
-
-TODO: Ammend to have more exlusion formuale
-
-"""
+""" Create formulae split """
 import argparse
-from pathlib import Path
 from collections import defaultdict
 import numpy as np
 import pandas as pd

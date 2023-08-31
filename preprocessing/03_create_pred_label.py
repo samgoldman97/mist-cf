@@ -42,9 +42,7 @@ def get_args():
     parser.add_argument(
         "--save-dir", default=None, help="Save path specified by the user"
     )
-    parser.add_argument(
-        "--out-name", default=None, help="out name"
-    )
+    parser.add_argument("--out-name", default=None, help="out name")
     parser.add_argument(
         "--data-dir", default="data/canopus_train", help="Path to data directory"
     )
@@ -65,7 +63,7 @@ def main():
 
     if args.save_dir is None:
         save_dir = Path(args.data_dir) / "pred_labels"
-    else: 
+    else:
         save_dir = Path(args.save_dir)
     save_dir.mkdir(exist_ok=True)
 
@@ -84,8 +82,17 @@ def main():
     all_outs = []
     total_cnt = 0
     no_decoy_cnt = 0
-    for obj in decoy_label_df[["spec", "formula", "ionization", "parentmass",
-                               "decoy_formulae", "decoy_ions", "instrument"]].values:
+    for obj in decoy_label_df[
+        [
+            "spec",
+            "formula",
+            "ionization",
+            "parentmass",
+            "decoy_formulae",
+            "decoy_ions",
+            "instrument",
+        ]
+    ].values:
         spec_name = obj[0]
         true_form = obj[1]
         true_ion = obj[2]
@@ -102,12 +109,13 @@ def main():
             decoy_forms.append(true_form)
             decoy_ions.append(true_ion)
             for decoy_form, decoy_ion in zip(decoy_forms, decoy_ions):
-                new_obj = {"spec": spec_name,
-                        "cand_form": decoy_form,
-                        "cand_ion": decoy_ion,
-                        "parentmass": parentmass,
-                        "instrument": instrument
-                        }
+                new_obj = {
+                    "spec": spec_name,
+                    "cand_form": decoy_form,
+                    "cand_ion": decoy_ion,
+                    "parentmass": parentmass,
+                    "instrument": instrument,
+                }
                 all_outs.append(new_obj)
 
     output_df = pd.DataFrame(all_outs)

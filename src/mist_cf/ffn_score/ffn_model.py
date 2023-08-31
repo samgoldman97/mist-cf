@@ -23,7 +23,7 @@ class ForwardFFN(pl.LightningModule):
         learning_rate: float = 7e-4,
         weight_decay: float = 0.0,
         form_encoder: str = "abs-sines",
-        **kwargs
+        **kwargs,
     ):
         """_summary_
 
@@ -41,7 +41,7 @@ class ForwardFFN(pl.LightningModule):
             learning_rate (float, optional): _description_. Defaults to 7e-4.
             weight_decay (float, optional): _description_. Defaults to 0.0.
             form_encoder (str, optional): _description_. Defaults to "abs-sines".
-        """    
+        """
         super().__init__()
         self.save_hyperparameters()
         self.hidden_size = hidden_size
@@ -52,11 +52,10 @@ class ForwardFFN(pl.LightningModule):
         self.ion_info = ion_info
         self.spec_info = spec_info
         self.instrument_info = instrument_info
-        
+
         self.cls_mass_diff = cls_mass_diff
         self.num_valid_ion = num_valid_ion
         self.num_valid_instrument = common.max_instr_idx
-
 
         self.learning_rate = learning_rate
         self.lr_decay_frac = lr_decay_frac
@@ -80,15 +79,22 @@ class ForwardFFN(pl.LightningModule):
         if self.instrument_info:
             self.input_dim += self.num_valid_instrument
 
-        self.mlp = nn_utils.MLPBlocks(input_size=self.input_dim,
-                                      hidden_size=self.hidden_size,
-                                      dropout=self.dropout,
-                                      num_layers=self.layers)
+        self.mlp = nn_utils.MLPBlocks(
+            input_size=self.input_dim,
+            hidden_size=self.hidden_size,
+            dropout=self.dropout,
+            num_layers=self.layers,
+        )
         self.output_layer = nn.Linear(self.hidden_size, 1)
 
-
-    def forward(self, binned_specs, encoded_formulae, parent_mass_diffs,
-                ion_inputs, instrument_inputs):
+    def forward(
+        self,
+        binned_specs,
+        encoded_formulae,
+        parent_mass_diffs,
+        ion_inputs,
+        instrument_inputs,
+    ):
         """predict spec."""
 
         # Encoded formula
@@ -102,7 +108,7 @@ class ForwardFFN(pl.LightningModule):
 
         if self.ion_info:
             cat_vec.append(ion_inputs.float())
-        
+
         if self.instrument_info:
             cat_vec.append(instrument_inputs.float())
 
@@ -115,12 +121,15 @@ class ForwardFFN(pl.LightningModule):
     def _common_step(self, batch, name="train"):
         parent_mass_diffs = batch["rel_mass_diffs"]
         spec_ars, forms = batch["spec_ars"], batch["formula_tensors"]
-        ions = batch['ion_tensors']
-        instrument_inputs = batch['instrument_tensors']
+        ions = batch["ion_tensors"]
+        instrument_inputs = batch["instrument_tensors"]
 
         model_outs = self.forward(
-            spec_ars.float(), forms.float(), parent_mass_diffs.float(),
-            ions.float(), instrument_inputs.float()
+            spec_ars.float(),
+            forms.float(),
+            parent_mass_diffs.float(),
+            ions.float(),
+            instrument_inputs.float(),
         )
         ex_inds = batch["example_inds"].long()
         num_inputs = batch["num_inputs"]
@@ -140,32 +149,28 @@ class ForwardFFN(pl.LightningModule):
         self.log(f"{name}_loss", nll_loss.mean(), batch_size=len(targ_inds))
         return output_loss
 
-
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, name="train")
-
 
     def validation_step(self, batch, batch_idx):
         return self._common_step(batch, name="val")
 
-
     def test_step(self, batch, batch_idx):
         return self._common_step(batch, name="test")
 
-
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.learning_rate,
-            weight_decay=self.weight_decay
+            self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay
         )
-        scheduler = nn_utils.build_lr_scheduler(optimizer,
-                                                lr_decay_rate=self.lr_decay_frac)
+        scheduler = nn_utils.build_lr_scheduler(
+            optimizer, lr_decay_rate=self.lr_decay_frac
+        )
         ret = {
             "optimizer": optimizer,
             "lr_scheduler": {
-                   "scheduler": scheduler,
-                   "frequency": 1,
-                   "interval": "step"
-            }
+                "scheduler": scheduler,
+                "frequency": 1,
+                "interval": "step",
+            },
         }
         return ret

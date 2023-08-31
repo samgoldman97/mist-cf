@@ -1,2 +1,2 @@
-#python launcher_scripts/run_from_config.py configs/mist_cf_canopus.yaml
+python launcher_scripts/run_from_config.py configs/mist_cf_canopus.yaml
 python launcher_scripts/run_from_config.py configs/mist_cf_canopus_nist.yaml

@@ -1,5 +1,4 @@
 dataset=nist_canopus
-# TODO: Switch to more gpus available
 CUDA_VISIBLE_DEVICES="0,2" python src/mist_cf/mist_cf_score/mist_cf_hyperopt.py \
     --dataset-name $dataset \
     --split-file data/$dataset/splits/split_1_hyperopt_10000.tsv \
@@ -16,6 +15,3 @@ CUDA_VISIBLE_DEVICES="0,2" python src/mist_cf/mist_cf_score/mist_cf_hyperopt.py 
     --cpus-per-trial 8 \
     --gpus-per-trial 1 \
     --num-h-samples 50 
-
-
-## -- debug

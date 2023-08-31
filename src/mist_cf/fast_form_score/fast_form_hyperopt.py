@@ -51,8 +51,7 @@ def score_function(config, base_args, orig_dir=""):
     df = pd.read_csv(dataset_file, sep="\t").fillna("")
 
     masses = df["mass"].values
-    train_inds, val_inds, test_inds = common.get_splits(masses, split_file,
-                                                        key="mass")
+    train_inds, val_inds, test_inds = common.get_splits(masses, split_file, key="mass")
 
     train_df = df.iloc[train_inds]
     val_df = df.iloc[val_inds]
@@ -65,13 +64,17 @@ def score_function(config, base_args, orig_dir=""):
     logging.info("Making datasets")
 
     train_dataset = fast_form_data.FormDataset(
-        train_df, num_workers=num_workers, decoys_per_pos=kwargs["max_decoy"],
-        use_ray=True
+        train_df,
+        num_workers=num_workers,
+        decoys_per_pos=kwargs["max_decoy"],
+        use_ray=True,
     )
     val_dataset = fast_form_data.FormDataset(
-        val_df, num_workers=num_workers, decoys_per_pos=kwargs["max_decoy"],
+        val_df,
+        num_workers=num_workers,
+        decoys_per_pos=kwargs["max_decoy"],
         val_test=True,
-        use_ray=True
+        use_ray=True,
     )
 
     # Define dataloaders
@@ -99,9 +102,9 @@ def score_function(config, base_args, orig_dir=""):
         layers=kwargs["layers"],
         dropout=kwargs["dropout"],
         learning_rate=kwargs["learning_rate"],
-        lr_decay_frac=kwargs['lr_decay_frac'],
-        weight_decay=kwargs['weight_decay'],
-        form_encoder=kwargs['form_encoder']
+        lr_decay_frac=kwargs["lr_decay_frac"],
+        weight_decay=kwargs["weight_decay"],
+        form_encoder=kwargs["form_encoder"],
     )
 
     # Create trainer
@@ -150,9 +153,14 @@ def get_param_space(trial):
     trial.suggest_categorical("batch_size", [16, 32, 64])
 
     trial.suggest_float("lr_decay_frac", 0.7, 1.0, log=True)
-    trial.suggest_categorical("weight_decay", [1e-6, 1e-7, 0.0],)
-    trial.suggest_categorical("form_encoder", ["abs-sines"],)
-
+    trial.suggest_categorical(
+        "weight_decay",
+        [1e-6, 1e-7, 0.0],
+    )
+    trial.suggest_categorical(
+        "form_encoder",
+        ["abs-sines"],
+    )
 
 
 def get_initial_points() -> List[Dict]:
@@ -169,7 +177,7 @@ def get_initial_points() -> List[Dict]:
         "batch_size": 16,
         "weight_decay": 0,
         "lr_decay_frac": 1.0,
-        "form_encoder": "abs-sines"
+        "form_encoder": "abs-sines",
     }
     return [init_base]
 
@@ -177,12 +185,17 @@ def get_initial_points() -> List[Dict]:
 def run_hyperopt():
     args = get_args()
     kwargs = args.__dict__
-    base_hyperopt.run_hyperopt(kwargs=kwargs, score_function=score_function,
-                               param_space_function=get_param_space,
-                               initial_points=get_initial_points())
+    base_hyperopt.run_hyperopt(
+        kwargs=kwargs,
+        score_function=score_function,
+        param_space_function=get_param_space,
+        initial_points=get_initial_points(),
+    )
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     import time
+
     start_time = time.time()
     run_hyperopt()
     end_time = time.time()

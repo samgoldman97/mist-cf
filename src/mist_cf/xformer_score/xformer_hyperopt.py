@@ -1,8 +1,4 @@
-"""ffn_hyperopt.py
-
-Hyperopt parameters
-
-"""
+"""Xformer hyperopt"""
 import os
 import copy
 import logging
@@ -30,14 +26,13 @@ def gen_shared_data(base_args):
     """gen_shared_data.
 
     Create an instantiation of datasets as needed for all datasets
-    
+
     """
     kwargs = copy.deepcopy(base_args)
     dataset_name = kwargs["dataset_name"]
     data_dir = common.get_data_dir(dataset_name)
     labels = Path(kwargs["decoy_label"])
     split_file = Path(kwargs["split_file"])
-
 
     num_workers = kwargs.get("num_workers", 0)
     logging.info("Making datasets")
@@ -72,9 +67,9 @@ def gen_shared_data(base_args):
     return dict(train_dataset=train_dataset, val_dataset=val_dataset)
 
 
-def score_function(config, base_args, 
-                   train_dataset=None, val_dataset=None,
-                   orig_dir=""):
+def score_function(
+    config, base_args, train_dataset=None, val_dataset=None, orig_dir=""
+):
     """score_function.
 
     Args:
@@ -87,8 +82,8 @@ def score_function(config, base_args,
     # tunedir = tune.get_trial_dir()
     # Switch s.t. we can use relative data structures
     # Copy datasets
-    #train_dataset = copy.deepcopy(train_dataset)
-    #val_dataset = copy.deepcopy(val_dataset)
+    # train_dataset = copy.deepcopy(train_dataset)
+    # val_dataset = copy.deepcopy(val_dataset)
 
     os.chdir(orig_dir)
 
@@ -101,7 +96,7 @@ def score_function(config, base_args,
 
     # Get dataset
     # Load smiles dataset and split into 3 subsets
-    
+
     num_workers = kwargs.get("num_workers", 0)
     logging.info("Making datasets")
     dataset_dict = gen_shared_data(kwargs)
@@ -136,9 +131,9 @@ def score_function(config, base_args,
         cls_mass_diff=kwargs["cls_mass_diff"],
         instrument_info=kwargs["instrument_info"],
         learning_rate=kwargs["learning_rate"],
-        lr_decay_frac=kwargs['lr_decay_frac'],
-        weight_decay=kwargs['weight_decay'],
-        form_encoder=kwargs['form_encoder']
+        lr_decay_frac=kwargs["lr_decay_frac"],
+        weight_decay=kwargs["weight_decay"],
+        form_encoder=kwargs["form_encoder"],
     )
 
     # Create trainer
@@ -187,9 +182,14 @@ def get_param_space(trial):
     trial.suggest_categorical("batch_size", [8, 16])
 
     trial.suggest_float("lr_decay_frac", 0.7, 1.0, log=True)
-    trial.suggest_categorical("weight_decay", [1e-6, 1e-7, 0.0],)
-    trial.suggest_categorical("form_encoder", ["abs-sines"],)
-
+    trial.suggest_categorical(
+        "weight_decay",
+        [1e-6, 1e-7, 0.0],
+    )
+    trial.suggest_categorical(
+        "form_encoder",
+        ["abs-sines"],
+    )
 
 
 def get_initial_points() -> List[Dict]:
@@ -199,14 +199,14 @@ def get_initial_points() -> List[Dict]:
 
     """
     init_base = {
-        "learning_rate": 0.0007713366639953808,
+        "learning_rate": 0.0007,
         "dropout": 0.3,
         "hidden_size": 256,
         "layers": 1,
         "batch_size": 16,
         "weight_decay": 1e-6,
-        "lr_decay_frac": 0.8512732067157704,
-        "form_encoder": "abs-sines"
+        "lr_decay_frac": 0.8512,
+        "form_encoder": "abs-sines",
     }
     return [init_base]
 
@@ -214,14 +214,18 @@ def get_initial_points() -> List[Dict]:
 def run_hyperopt():
     args = get_args()
     kwargs = args.__dict__
-    base_hyperopt.run_hyperopt(kwargs=kwargs, score_function=score_function,
-                               param_space_function=get_param_space,
-                               initial_points=get_initial_points(),
-                               #gen_shared_data=gen_shared_data
-                               )
+    base_hyperopt.run_hyperopt(
+        kwargs=kwargs,
+        score_function=score_function,
+        param_space_function=get_param_space,
+        initial_points=get_initial_points(),
+        # gen_shared_data=gen_shared_data
+    )
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     import time
+
     start_time = time.time()
     run_hyperopt()
     end_time = time.time()

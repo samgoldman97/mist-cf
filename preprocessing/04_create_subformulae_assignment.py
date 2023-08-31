@@ -34,9 +34,7 @@ def get_args():
     parser.add_argument(
         "--data-dir", default="data/canopus_train", help="data directory"
     )
-    parser.add_argument(
-        "--out-name", default=None, help="Out suffix"
-    )
+    parser.add_argument("--out-name", default=None, help="Out suffix")
     parser.add_argument(
         "--max-formulae",
         default=100,
@@ -100,7 +98,6 @@ def get_args():
     return parser.parse_args()
 
 
-
 def single_spec_process(spec_name, data_dir, max_formulae, inten_thresh):
     """single_spec_process.
 
@@ -111,8 +108,13 @@ def single_spec_process(spec_name, data_dir, max_formulae, inten_thresh):
         inten_thresh:
     """
     spec = common.process_spec_file_unbinned(spec_name, data_dir=data_dir)
-    return (spec[0], common.max_thresh_spec(spec[1], max_peaks=max_formulae,
-                                            inten_thresh=inten_thresh))
+    return (
+        spec[0],
+        common.max_thresh_spec(
+            spec[1], max_peaks=max_formulae, inten_thresh=inten_thresh
+        ),
+    )
+
 
 def main():
     args = get_args()
@@ -148,7 +150,9 @@ def main():
     if assign_test_only:
         split_file_path = Path(split_file)
         split_df = pd.read_csv(split_file_path, sep="\t")
-        test_spec_name_lst = set(split_df[split_df["Fold_0"] == "test"]["spec"].to_list())
+        test_spec_name_lst = set(
+            split_df[split_df["Fold_0"] == "test"]["spec"].to_list()
+        )
         labels_df = labels_df[labels_df["spec"].isin(test_spec_name_lst)]
 
     if ionization is not None:
@@ -157,16 +161,19 @@ def main():
     spec_lst = labels_df["spec"].to_list()
     labels_df = labels_df.fillna("").reset_index()
 
-    proc_spec_full = partial(single_spec_process,
-                             data_dir=data_dir,
-                             max_formulae=max_formulae,
-                             inten_thresh=inten_thresh)
+    proc_spec_full = partial(
+        single_spec_process,
+        data_dir=data_dir,
+        max_formulae=max_formulae,
+        inten_thresh=inten_thresh,
+    )
 
     # Process and subset to top k peaks and above certain thresh
     if debug:
         input_specs = [proc_spec_full(i) for i in tqdm(spec_lst)]
     else:
-        input_specs = common.chunked_parallel(spec_lst, proc_spec_full, chunks=500, max_cpu=num_workers
+        input_specs = common.chunked_parallel(
+            spec_lst, proc_spec_full, chunks=500, max_cpu=num_workers
         )
 
     input_specs = {k: v for k, v in input_specs}
@@ -174,16 +181,16 @@ def main():
     # Build up all output dicts to map
     spec_to_assigns = defaultdict(lambda: [])
     for _, spec_entry in labels_df.iterrows():
-        spec_name = spec_entry['spec']
+        spec_name = spec_entry["spec"]
         spec = input_specs[spec_name]
-        true_form = spec_entry['formula']
-        true_ion = spec_entry['ionization']
-        instrument = spec_entry['instrument']
+        true_form = spec_entry["formula"]
+        true_ion = spec_entry["ionization"]
+        instrument = spec_entry["instrument"]
         mass_diff_thresh = common.get_instr_tol(instrument)
         export_dicts = spec_to_assigns[spec_name]
 
-        cand_forms = spec_entry['decoy_formulae']
-        cand_ions = spec_entry['decoy_ions']
+        cand_forms = spec_entry["decoy_formulae"]
+        cand_ions = spec_entry["decoy_ions"]
         if cand_forms == "":
             cand_forms = []
             cand_ions = []
@@ -194,28 +201,30 @@ def main():
         cand_forms.append(true_form)
         cand_ions.append(true_ion)
         for cand_ion, cand_form in zip(cand_ions, cand_forms):
-            export_dicts.append({
+            export_dicts.append(
+                {
                     "spec": spec,
                     "mass_diff_type": mass_diff_type,
                     "spec_name": spec_name,
                     "mass_diff_thresh": mass_diff_thresh,
                     "form": cand_form,
-                    "ion_type": cand_ion
-            })
+                    "ion_type": cand_ion,
+                }
+            )
         print(f"There are {len(export_dicts)} spec-cand pairs this spec files")
 
         if debug:
             spec_to_assigns[spec_name] = export_dicts[:2]
 
         # port these
-        #spec_to_assigns[spec_name] = export_dicts[:2]
+        # spec_to_assigns[spec_name] = export_dicts[:2]
 
     # Define how to parallelize these assignments
-    parallel_list = [{"spec_name": k, "export_dicts": v,
-                      "output_dir": output_dir}
-                     for k, v in spec_to_assigns.items()
-                     #if not (output_dir / f"{k}.json").exists()
-                     ]
+    parallel_list = [
+        {"spec_name": k, "export_dicts": v, "output_dir": output_dir}
+        for k, v in spec_to_assigns.items()
+        # if not (output_dir / f"{k}.json").exists()
+    ]
 
     export_wrapper = lambda x: common.assign_single_spec(**x)
     print(f"Processing {len(parallel_list)} different spectra")

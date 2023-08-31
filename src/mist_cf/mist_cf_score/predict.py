@@ -76,7 +76,7 @@ def predict():
     if args.save_dir is None:
         raise ValueError("Please specify the save dir.")
 
-    save_dir = Path(kwargs['save_dir'])
+    save_dir = Path(kwargs["save_dir"])
     save_name = kwargs.get("save_name")
     save_name = "formatted_output.tsv" if save_name is None else save_name
     save_name = save_dir / save_name
@@ -93,11 +93,11 @@ def predict():
         fp.write(yaml_args)
 
     # Get dataset
-    dataset_name = kwargs['dataset_name']
+    dataset_name = kwargs["dataset_name"]
     data_dir = common.get_data_dir(dataset_name)
 
     # Get corresponding prediction label
-    pred_label_path = Path(kwargs['pred_label'])
+    pred_label_path = Path(kwargs["pred_label"])
     df = pd.read_csv(pred_label_path, sep="\t")
 
     if debug:
@@ -118,10 +118,10 @@ def predict():
     pred_dataset = mist_cf_data.PredDataset(
         df,
         data_dir=data_dir,
-        subform_dir=kwargs['subform_dir'],
+        subform_dir=kwargs["subform_dir"],
         num_workers=num_workers,
         max_subpeak=model.max_subpeak,
-        ablate_cls_error=not model.cls_mass_diff
+        ablate_cls_error=not model.cls_mass_diff,
     )
     # Define dataloaders
     collate_fn = pred_dataset.get_collate_fn()
@@ -141,7 +141,15 @@ def predict():
     out_names, out_forms, out_scores, out_ions, out_parentmasses = [], [], [], [], []
     with torch.no_grad():
         for batch in pred_loader:
-            peak_types, form_vec, ion_vec, instrument_vec, intens, rel_mass_diffs, num_peaks = (
+            (
+                peak_types,
+                form_vec,
+                ion_vec,
+                instrument_vec,
+                intens,
+                rel_mass_diffs,
+                num_peaks,
+            ) = (
                 batch["types"],
                 batch["form_vec"],
                 batch["ion_vec"],
@@ -159,7 +167,13 @@ def predict():
             num_peaks = num_peaks.to(device)
 
             model_outs = model.forward(
-                num_peaks, peak_types, form_vec, ion_vec, instrument_vec, intens, rel_mass_diffs
+                num_peaks,
+                peak_types,
+                form_vec,
+                ion_vec,
+                instrument_vec,
+                intens,
+                rel_mass_diffs,
             )
             # ex_inds = batch['example_inds'].long()
             # num_inputs = batch['num_inputs']

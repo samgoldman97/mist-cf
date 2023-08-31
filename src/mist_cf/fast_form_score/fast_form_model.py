@@ -23,7 +23,7 @@ class FastFFN(pl.LightningModule):
         lr_decay_frac: float = 1.0,
         weight_decay: float = 0.0,
         form_encoder: str = "abs-sines",
-        **kwargs
+        **kwargs,
     ):
         """__init__.
         Args:
@@ -49,14 +49,15 @@ class FastFFN(pl.LightningModule):
         self.form_embedder = nn_utils.get_embedder(form_encoder)
         self.input_dim = self.form_embedder.full_dim
 
-        self.mlp = nn_utils.MLPBlocks(input_size=self.input_dim,
-                                      hidden_size=self.hidden_size,
-                                      dropout=self.dropout,
-                                      num_layers=self.layers)
+        self.mlp = nn_utils.MLPBlocks(
+            input_size=self.input_dim,
+            hidden_size=self.hidden_size,
+            dropout=self.dropout,
+            num_layers=self.layers,
+        )
         self.output_layer = nn.Linear(self.hidden_size, 1)
         self.output_layer = nn.Linear(self.hidden_size, 1)
         self.output_activation = nn.Sigmoid()
-
 
     def forward(self, formulae):
         """predict spec."""
@@ -66,7 +67,6 @@ class FastFFN(pl.LightningModule):
         output = self.output_activation(output)
         return output.squeeze()
 
-
     def _common_step(self, batch, name="train"):
         x, y = batch["x"], batch["y"].float()
         model_outs = self.forward(x.float())
@@ -75,39 +75,42 @@ class FastFFN(pl.LightningModule):
         self.log(f"{name}_loss", bce_loss)
         return output_loss
 
-
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, name="train")
-
 
     def validation_step(self, batch, batch_idx):
         return self._common_step(batch, name="val")
 
-
     def test_step(self, batch, batch_idx):
         return self._common_step(batch, name="test")
 
-
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.learning_rate,
-            weight_decay=self.weight_decay
+            self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay
         )
-        scheduler = nn_utils.build_lr_scheduler(optimizer,
-                                                lr_decay_rate=self.lr_decay_frac)
+        scheduler = nn_utils.build_lr_scheduler(
+            optimizer, lr_decay_rate=self.lr_decay_frac
+        )
         ret = {
             "optimizer": optimizer,
             "lr_scheduler": {
-                   "scheduler": scheduler,
-                   "frequency": 1,
-                   "interval": "step"
-            }
+                "scheduler": scheduler,
+                "frequency": 1,
+                "interval": "step",
+            },
         }
         return ret
-    
-    def fast_filter_sampling(self, spec, decoy_ion_lst, decoy_ions, max_decoy,
-                    device: torch.device,
-                    batch_size: int = 128, num_workers: int = 0) -> pd.DataFrame:
+
+    def fast_filter_sampling(
+        self,
+        spec,
+        decoy_ion_lst,
+        decoy_ions,
+        max_decoy,
+        device: torch.device,
+        batch_size: int = 128,
+        num_workers: int = 0,
+    ) -> pd.DataFrame:
         """fast_filter.
         Args:
         Returns:
@@ -116,8 +119,12 @@ class FastFFN(pl.LightningModule):
         if len(decoy_ion_lst) == 0:
             return []
         num = len(decoy_ion_lst)
-        data = {"spec": [spec]*num, "cand_form": decoy_ion_lst, "cand_ion": decoy_ions}
-        label_df = pd.DataFrame.from_dict(data)  
+        data = {
+            "spec": [spec] * num,
+            "cand_form": decoy_ion_lst,
+            "cand_ion": decoy_ions,
+        }
+        label_df = pd.DataFrame.from_dict(data)
 
         # Create dataset
         pred_dataset = fast_form_data.PredDataset(
@@ -160,9 +167,14 @@ class FastFFN(pl.LightningModule):
         return sorted_idx
 
 
-def fast_filter_df(label_df: pd.DataFrame, fast_num: int, 
-                    fast_model: str, device: torch.device,
-                    batch_size: int = 128, num_workers: int = 16) -> pd.DataFrame:
+def fast_filter_df(
+    label_df: pd.DataFrame,
+    fast_num: int,
+    fast_model: str,
+    device: torch.device,
+    batch_size: int = 128,
+    num_workers: int = 16,
+) -> pd.DataFrame:
     """fast_filter.
 
     Args:
@@ -215,9 +227,13 @@ def fast_filter_df(label_df: pd.DataFrame, fast_num: int,
             out_ions.extend(ions)
 
     spec_to_parent = dict(label_df[["spec", "parentmass"]].values)
-    output = {"names": out_names, "forms": out_forms, "scores": out_scores,
-            "ions": out_ions,
-            "parentmass": [spec_to_parent[fn] for fn in out_names],}
+    output = {
+        "names": out_names,
+        "forms": out_forms,
+        "scores": out_scores,
+        "ions": out_ions,
+        "parentmass": [spec_to_parent[fn] for fn in out_names],
+    }
 
     out_df = pd.DataFrame(output)
     out_df = out_df.rename(
@@ -225,7 +241,6 @@ def fast_filter_df(label_df: pd.DataFrame, fast_num: int,
     )
 
     # Subset to top k
-    topk_fn = lambda x: x.nlargest(fast_num, ['scores'])
-    new_df = out_df.groupby(['spec']).apply(topk_fn).reset_index(drop=True)
+    topk_fn = lambda x: x.nlargest(fast_num, ["scores"])
+    new_df = out_df.groupby(["spec"]).apply(topk_fn).reset_index(drop=True)
     return new_df
-

@@ -18,6 +18,7 @@ class IntFeaturizer(nn.Module):
     be learned, and be used for extra  non-integer tokens such as the "to be confirmed token" (i.e., pad) token.
     They are indexed starting from `self.MAX_COUNT_INT`.
     """
+
     MAX_COUNT_INT = 255  # the maximum number of integers that we are going to see as a "count", i.e. 0 to MAX_COUNT_INT-1
     NUM_EXTRA_EMBEDDINGS = 1  # Number of extra embeddings to learn -- one for the "to be confirmed" embedding.
 
@@ -25,20 +26,21 @@ class IntFeaturizer(nn.Module):
         super().__init__()
         weights = torch.zeros(self.NUM_EXTRA_EMBEDDINGS, embedding_dim)
         self._extra_embeddings = nn.Parameter(weights, requires_grad=True)
-        nn.init.normal_(self._extra_embeddings, 0., 1.)
+        nn.init.normal_(self._extra_embeddings, 0.0, 1.0)
         self.embedding_dim = embedding_dim
 
     def forward(self, tensor):
         """
         Convert the integer `tensor` into its new representation -- note that it gets stacked along final dimension.
         """
-        #todo(jab): copied this code from the original in-built binarizer embedder in built into the class.
+        # todo(jab): copied this code from the original in-built binarizer embedder in built into the class.
         # very similar to F.embedding but we want to put the embedding into the final dimension -- could ask Sam
         # why...
 
         orig_shape = tensor.shape
-        out_tensor = torch.empty((*orig_shape, self.embedding_dim),
-                                 device=tensor.device)
+        out_tensor = torch.empty(
+            (*orig_shape, self.embedding_dim), device=tensor.device
+        )
         extra_embed = tensor >= self.MAX_COUNT_INT
 
         tensor = tensor.long()
@@ -51,11 +53,9 @@ class IntFeaturizer(nn.Module):
         temp_out = out_tensor.reshape(*orig_shape[:-1], -1)
         return temp_out
 
-
     @property
     def num_dim(self):
         return self.int_to_feat_matrix.shape[1]
-
 
     @property
     def full_dim(self):
@@ -65,7 +65,9 @@ class IntFeaturizer(nn.Module):
 class Binarizer(IntFeaturizer):
     def __init__(self):
         super().__init__(embedding_dim=len(common.num_to_binary(0)))
-        int_to_binary_repr = np.vstack([common.num_to_binary(i) for i in range(self.MAX_COUNT_INT)])
+        int_to_binary_repr = np.vstack(
+            [common.num_to_binary(i) for i in range(self.MAX_COUNT_INT)]
+        )
         int_to_binary_repr = torch.from_numpy(int_to_binary_repr)
         self.int_to_feat_matrix = nn.Parameter(int_to_binary_repr.float())
         self.int_to_feat_matrix.requires_grad = False
@@ -82,6 +84,7 @@ class FourierFeaturizer(IntFeaturizer):
     * we'll put the frequencies at powers of 1/2 rather than random Gaussian samples; this means it will match the
         Binarizer quite closely but be a bit smoother.
     """
+
     def __init__(self):
 
         num_freqs = int(np.ceil(np.log2(self.MAX_COUNT_INT))) + 2
@@ -90,15 +93,24 @@ class FourierFeaturizer(IntFeaturizer):
         freqs = 0.5 ** torch.arange(num_freqs, dtype=torch.float32)
         freqs_time_2pi = 2 * np.pi * freqs
 
-        super().__init__(embedding_dim=2* freqs_time_2pi.shape[0])  # 2 for cosine and sine
+        super().__init__(
+            embedding_dim=2 * freqs_time_2pi.shape[0]
+        )  # 2 for cosine and sine
 
         # we will define the features at this frequency up front (as we only will ever see a fixed number of counts):
-        combo_of_sinusoid_args = torch.arange(self.MAX_COUNT_INT, dtype=torch.float32)[:, None] * freqs_time_2pi[None, :]
-        all_features = torch.cat([torch.cos(combo_of_sinusoid_args), torch.sin(combo_of_sinusoid_args)], dim=1)
+        combo_of_sinusoid_args = (
+            torch.arange(self.MAX_COUNT_INT, dtype=torch.float32)[:, None]
+            * freqs_time_2pi[None, :]
+        )
+        all_features = torch.cat(
+            [torch.cos(combo_of_sinusoid_args), torch.sin(combo_of_sinusoid_args)],
+            dim=1,
+        )
 
         # ^ shape:  MAX_COUNT_INT x 2 * num_freqs
         self.int_to_feat_matrix = nn.Parameter(all_features.float())
         self.int_to_feat_matrix.requires_grad = False
+
 
 class FourierFeaturizerSines(IntFeaturizer):
     """
@@ -113,6 +125,7 @@ class FourierFeaturizerSines(IntFeaturizer):
     * we'll put the frequencies at powers of 1/2 rather than random Gaussian samples; this means it will match the
         Binarizer quite closely but be a bit smoother.
     """
+
     def __init__(self):
 
         num_freqs = int(np.ceil(np.log2(self.MAX_COUNT_INT))) + 2
@@ -124,9 +137,14 @@ class FourierFeaturizerSines(IntFeaturizer):
         super().__init__(embedding_dim=freqs_time_2pi.shape[0])
 
         # we will define the features at this frequency up front (as we only will ever see a fixed number of counts):
-        combo_of_sinusoid_args = torch.arange(self.MAX_COUNT_INT, dtype=torch.float32)[:, None] * freqs_time_2pi[None, :]
+        combo_of_sinusoid_args = (
+            torch.arange(self.MAX_COUNT_INT, dtype=torch.float32)[:, None]
+            * freqs_time_2pi[None, :]
+        )
         # ^ shape:  MAX_COUNT_INT x 2 * num_freqs
-        self.int_to_feat_matrix = nn.Parameter(torch.sin(combo_of_sinusoid_args).float())
+        self.int_to_feat_matrix = nn.Parameter(
+            torch.sin(combo_of_sinusoid_args).float()
+        )
         self.int_to_feat_matrix.requires_grad = False
 
 
@@ -143,6 +161,7 @@ class FourierFeaturizerAbsoluteSines(IntFeaturizer):
     * we'll put the frequencies at powers of 1/2 rather than random Gaussian samples; this means it will match the
         Binarizer quite closely but be a bit smoother.
     """
+
     def __init__(self):
 
         num_freqs = int(np.ceil(np.log2(self.MAX_COUNT_INT))) + 2
@@ -153,10 +172,16 @@ class FourierFeaturizerAbsoluteSines(IntFeaturizer):
         super().__init__(embedding_dim=freqs_time_2pi.shape[0])
 
         # we will define the features at this frequency up front (as we only will ever see a fixed number of counts):
-        combo_of_sinusoid_args = torch.arange(self.MAX_COUNT_INT, dtype=torch.float32)[:, None] * freqs_time_2pi[None, :]
+        combo_of_sinusoid_args = (
+            torch.arange(self.MAX_COUNT_INT, dtype=torch.float32)[:, None]
+            * freqs_time_2pi[None, :]
+        )
         # ^ shape:  MAX_COUNT_INT x 2 * num_freqs
-        self.int_to_feat_matrix = nn.Parameter(torch.abs(torch.sin(combo_of_sinusoid_args)).float())
+        self.int_to_feat_matrix = nn.Parameter(
+            torch.abs(torch.sin(combo_of_sinusoid_args)).float()
+        )
         self.int_to_feat_matrix.requires_grad = False
+
 
 class RBFFeaturizer(IntFeaturizer):
     """
@@ -164,6 +189,7 @@ class RBFFeaturizer(IntFeaturizer):
     (max_count-1) / (num_funcs) to decay to about 0.6 of its original height at reaching the next func.
 
     """
+
     def __init__(self, num_funcs=32):
         """
         :param num_funcs: number of radial basis functions to use: their width will automatically be chosen -- see class
@@ -171,14 +197,19 @@ class RBFFeaturizer(IntFeaturizer):
         """
         super().__init__(embedding_dim=num_funcs)
         width = (self.MAX_COUNT_INT - 1) / num_funcs
-        centers = torch.linspace(0, self.MAX_COUNT_INT-1, num_funcs)
+        centers = torch.linspace(0, self.MAX_COUNT_INT - 1, num_funcs)
 
-        pre_exponential_terms = -0.5 * ((torch.arange(self.MAX_COUNT_INT)[:, None] - centers[None, :])/width)**2
+        pre_exponential_terms = (
+            -0.5
+            * ((torch.arange(self.MAX_COUNT_INT)[:, None] - centers[None, :]) / width)
+            ** 2
+        )
         # ^ shape: MAX_COUNT_INT x num_funcs
         feats = torch.exp(pre_exponential_terms)
 
         self.int_to_feat_matrix = nn.Parameter(feats.float())
         self.int_to_feat_matrix.requires_grad = False
+
 
 class OneHotFeaturizer(IntFeaturizer):
     """
@@ -190,6 +221,7 @@ class OneHotFeaturizer(IntFeaturizer):
      - 2 as 0010000000...
      and so on.
     """
+
     def __init__(self):
         super().__init__(embedding_dim=self.MAX_COUNT_INT)
         feats = torch.eye(self.MAX_COUNT_INT)
@@ -203,11 +235,13 @@ class LearnedFeaturizer(IntFeaturizer):
 
     Pretty much `nn.Embedding` but we get to use the forward of the superclass which behaves a bit differently.
     """
+
     def __init__(self, feature_dim=32):
         super().__init__(embedding_dim=feature_dim)
         weights = torch.zeros(self.MAX_COUNT_INT, feature_dim)
         self.int_to_feat_matrix = nn.Parameter(weights, requires_grad=True)
-        nn.init.normal_(self.int_to_feat_matrix, 0., 1.)
+        nn.init.normal_(self.int_to_feat_matrix, 0.0, 1.0)
+
 
 class FloatFeaturizer(IntFeaturizer):
     """
@@ -222,7 +256,6 @@ class FloatFeaturizer(IntFeaturizer):
         self.norm_vec = nn.Parameter(self.norm_vec)
         self.norm_vec.requires_grad = False
 
-
     def forward(self, tensor):
         """
         Convert the integer `tensor` into its new representation -- note that it gets stacked along final dimension.
@@ -234,6 +267,7 @@ class FloatFeaturizer(IntFeaturizer):
     @property
     def num_dim(self):
         return 1
+
 
 def get_embedder(embedder):
     if embedder == "binary":

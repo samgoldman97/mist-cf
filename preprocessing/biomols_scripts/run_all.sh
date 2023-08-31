@@ -1,6 +1,7 @@
 # Filter smiles 
 python preprocessing/biomols_scripts/01_filter_smiles.py --smiles-list data/biomols/biomols.txt --smiles-out data/biomols/biomols_filter.txt 
 
+
 # Extract forms
 python preprocessing/biomols_scripts/02_extract_formulae.py --smiles-list data/biomols/biomols_filter.txt --form-out data/biomols/biomols_filter_formulae.txt 
 
