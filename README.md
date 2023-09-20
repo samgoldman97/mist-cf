@@ -4,16 +4,17 @@
 
 
 
-This repository provides implementations and code examples for [MIST-CF](http://arxiv.org/abs/2307.08240), an
-extension of [MIST](https://www.biorxiv.org/content/10.1101/2022.12.30.522318v1) for annotating MS1 precursor masses from MS/MS data in a _de
-novo_ setting. MIST-CF ranks chemical formula and adduct assignments for an
-unknown mass spectrum using an end-to-end energy based modeling approach,
-without referencing any spectrum databases. Instead of computing fragmentation
-trees, MIST-CF adopts a formula transformer neural network architecture and
-learns in a data dependent fashion.
+This repository provides implementations and code examples for
+[MIST-CF](https://www.nature.com/articles/s42256-023-00708-3), an extension of
+[MIST](https://www.nature.com/articles/s42256-023-00708-3) for annotating MS1
+precursor masses from MS/MS data in a _de novo_ setting. MIST-CF ranks chemical
+formula and adduct assignments for an unknown mass spectrum using an end-to-end
+energy based modeling approach, without referencing any spectrum databases.
+Instead of computing fragmentation trees, MIST-CF adopts a formula transformer
+neural network architecture and learns in a data dependent fashion.
 
 
-Paper: [http://arxiv.org/abs/2307.08240](https://arxiv.org/abs/2307.08240)  
+Paper: [https://pubs.acs.org/doi/full/10.1021/acs.jcim.3c01082](https://pubs.acs.org/doi/full/10.1021/acs.jcim.3c01082)  
 
 ![Model  graphic](mist_cf_graphic.png)
 
@@ -249,14 +250,15 @@ Additional analyses used for figure generation were conducted in `notebooks/`.
 If you use this repository, please consider citing both our work and the original SIRIUS papers, as we still rely on their deterministic tool for formula enumerations: 
 
 ```
-@misc{goldman2023mistcf,
-      title={MIST-CF: Chemical formula inference from tandem mass spectra}, 
-      author={Samuel Goldman and Jiayi Xin and Joules Provenzano and Connor W. Coley},
-      year={2023},
-      eprint={2307.08240},
-      archivePrefix={arXiv},
-      primaryClass={q-bio.QM}
+
+@article{doi:10.1021/acs.jcim.3c01082,
+        author = {Goldman, Samuel and Xin, Jiayi and Provenzano, Joules and Coley, Connor W.},
+        title = {MIST-CF: Chemical Formula Inference from Tandem Mass Spectra},
+        journal = {Journal of Chemical Information and Modeling},
+        doi = {10.1021/acs.jcim.3c01082},
+        URL = {https://doi.org/10.1021/acs.jcim.3c01082},
 }
+
 ```
 
 1. Böcker, Sebastian, et al. "SIRIUS: decomposing isotope patterns for metabolite identification." Bioinformatics 25.2 (2009): 218-224.
